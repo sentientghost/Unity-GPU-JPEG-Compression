@@ -6,12 +6,18 @@ using UnityEngine;
 
 public class CameraScript : MonoBehaviour 
 {
+    enum Resolutions { _1440p = 1440, _1080p = 1080, _720p = 720, _480p = 480, _360p = 360, _240p = 240, _144p = 144 }
+
+    [Header("Camera Settings")]
     [SerializeField] Camera cameraObject;
     [SerializeField] int cameraQuality = 75;
     [SerializeField] int cameraFrequency = 25;
     [SerializeField] float cameraTime = 10.0f;
-    [SerializeField] int imageWidth = 1280;
-    [SerializeField] int imageHeight = 720;
+
+    [Header("Resolution")]
+    [SerializeField] Resolutions resolution = Resolutions._720p;
+    int imageWidth;
+    int imageHeight;
 
     float intervalTime;
     float timeElapsed;
@@ -22,6 +28,9 @@ public class CameraScript : MonoBehaviour
     {
         if (cameraObject.targetTexture == null)
         {
+            float aspectRatio = 16.0f / 9.0f;
+            imageHeight = (int)resolution;
+            imageWidth = (int)(imageHeight * aspectRatio);
             cameraObject.targetTexture = new RenderTexture(imageWidth, imageHeight, 24);
         }
         else
@@ -70,7 +79,7 @@ public class CameraScript : MonoBehaviour
 
     string ImageName()
     {
-        return string.Format("{0}/../Images/image_{1}x{2}_{3}.jpg", Application.dataPath, imageWidth, imageHeight, System.DateTime.Now.ToString("yyyy-MM-dd_HH-mm-ss"));
+        return string.Format("{0}/../Images/image_{1}x{2}_{3}.jpg", Application.dataPath, imageWidth, imageHeight, System.DateTime.Now.ToString("yyyy-MM-dd_HH-mm-ss.fff"));
     }
 
     void OnDisable()
