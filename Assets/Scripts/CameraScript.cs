@@ -14,6 +14,8 @@ public class CameraScript : MonoBehaviour
 
     float intervalTime;
     float timeElapsed;
+    int imageCountIdeal = 0;
+    int imageCountActual = 0;
 
     void Awake() 
     {
@@ -49,6 +51,7 @@ public class CameraScript : MonoBehaviour
     void FixedUpdate() {
         if (Time.fixedTime >= intervalTime) {
             CallTakeImage();
+            imageCountActual += 1;
             intervalTime = Time.fixedTime + (1.0f/cameraFrequency);
         }
     }
@@ -71,6 +74,17 @@ public class CameraScript : MonoBehaviour
 
     void OnDisable()
     {
+        if (cameraTime > 0)
+        {
+            imageCountIdeal = (int)(cameraTime * cameraFrequency);
+        }
+        else
+        {
+            imageCountIdeal = (int)(timeElapsed * cameraFrequency);
+        }
+        
         Debug.Log("Time Elasped: " + timeElapsed);
+        Debug.Log("Image Count (ideal):" + imageCountIdeal);
+        Debug.Log("Image Count (actual):" + imageCountActual);
     }
 }
