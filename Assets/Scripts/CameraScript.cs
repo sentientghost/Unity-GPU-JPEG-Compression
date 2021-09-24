@@ -7,6 +7,7 @@ using UnityEngine;
 public class CameraScript : MonoBehaviour 
 {
     [SerializeField] Camera cameraObject;
+    [SerializeField] int cameraQuality = 75;
     [SerializeField] int cameraFrequency = 25;
     [SerializeField] float cameraTime = 10.0f;
     [SerializeField] int imageWidth = 1280;
@@ -62,14 +63,14 @@ public class CameraScript : MonoBehaviour
         cameraObject.Render();
         RenderTexture.active = cameraObject.targetTexture;
         image.ReadPixels(new Rect(0, 0, imageWidth, imageHeight), 0, 0);
-        byte[] bytes = image.EncodeToPNG();
+        byte[] bytes = image.EncodeToJPG(cameraQuality);
         string filename = ImageName();
         System.IO.File.WriteAllBytes(filename, bytes);
     }
 
     string ImageName()
     {
-        return string.Format("{0}/../Images/image_{1}x{2}_{3}.png", Application.dataPath, imageWidth, imageHeight, System.DateTime.Now.ToString("yyyy-MM-dd_HH-mm-ss"));
+        return string.Format("{0}/../Images/image_{1}x{2}_{3}.jpg", Application.dataPath, imageWidth, imageHeight, System.DateTime.Now.ToString("yyyy-MM-dd_HH-mm-ss"));
     }
 
     void OnDisable()
