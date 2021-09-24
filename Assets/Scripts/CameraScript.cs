@@ -1,62 +1,76 @@
 using System.Collections;
 using System.Collections.Generic;
+using UnityEditor;
 using UnityEngine;
 
-// Ensure always using Camera Script on a Camera Object
-// [RequireComponent(typeof(Camera))]
+
 public class CameraScript : MonoBehaviour 
 {
-    [SerializeField] Camera backCam;
+    [SerializeField] Camera cameraObject;
+    [SerializeField] int cameraFrequency = 25;
+    [SerializeField] float cameraTime = 10.0f;
+    [SerializeField] int imageWidth = 1280;
+    [SerializeField] int imageHeight = 720;
 
-    [SerializeField] int resWidth = 1280;
-    [SerializeField] int resHeight = 720;
-
-    [SerializeField] int frequency = 25;
     float intervalTime;
+    float timeElapsed;
 
-    // void Awake() 
-    // {
-    //     //backCam = GetComponent<Camera>();
+    void Awake() 
+    {
+        if (cameraObject.targetTexture == null)
+        {
+            cameraObject.targetTexture = new RenderTexture(imageWidth, imageHeight, 24);
+        }
+        else
+        {
+            imageWidth = cameraObject.targetTexture.width;
+            imageHeight = cameraObject.targetTexture.height;
+        }
+    }
 
-    //     if (backCam.targetTexture == null)
-    //     {
-    //         backCam.targetTexture = new RenderTexture(resWidth, resHeight, 24);
-    //     }
-    //     else
-    //     {
-    //         resWidth = backCam.targetTexture.width;
-    //         resHeight = backCam.targetTexture.height;
-    //     }
+    void Start() 
+    {
+        intervalTime = Time.fixedTime + (1.0f/cameraFrequency);
+    }
 
-    //     backCam.gameObject.SetActive(false);
-    // }
+    void Update() 
+    {
+        timeElapsed += Time.deltaTime;
 
-    void Start() {
-        backCam.targetTexture = new RenderTexture(resWidth, resHeight, 24);
-        intervalTime = Time.fixedTime + (1.0f/frequency);
+        if (cameraTime > 0)
+        {
+            if (timeElapsed >= cameraTime)
+            {
+                EditorApplication.isPlaying = false;
+            }
+        }
     }
 
     void FixedUpdate() {
         if (Time.fixedTime >= intervalTime) {
             CallTakeImage();
-            intervalTime = Time.fixedTime + (1.0f/frequency);
+            intervalTime = Time.fixedTime + (1.0f/cameraFrequency);
         }
     }
 
     void CallTakeImage()
     {
-        Texture2D image = new Texture2D(resWidth, resHeight, TextureFormat.RGB24, false);
-        backCam.Render();
-        RenderTexture.active = backCam.targetTexture;
-        image.ReadPixels(new Rect(0, 0, resWidth, resHeight), 0, 0);
+        Texture2D image = new Texture2D(imageWidth, imageHeight, TextureFormat.RGB24, false);
+        cameraObject.Render();
+        RenderTexture.active = cameraObject.targetTexture;
+        image.ReadPixels(new Rect(0, 0, imageWidth, imageHeight), 0, 0);
         byte[] bytes = image.EncodeToPNG();
         string filename = ImageName();
         System.IO.File.WriteAllBytes(filename, bytes);
-        Debug.Log("Image Taken!");
     }
 
     string ImageName()
     {
-        return string.Format("{0}/../Images/image_{1}x{2}_{3}.png", Application.dataPath, resWidth, resHeight, System.DateTime.Now.ToString("yyyy-MM-dd_HH-mm-ss"));
+        return string.Format("{0}/../Images/image_{1}x{2}_{3}.png", Application.dataPath, imageWidth, imageHeight, System.DateTime.Now.ToString("yyyy-MM-dd_HH-mm-ss"));
+    }
+
+    void OnDisable()
+    {
+        Debug.Log("Time Elasped: " + timeElapsed);
     }
 }

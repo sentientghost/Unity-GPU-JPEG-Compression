@@ -247,10 +247,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 94a2f955eaada074396fbbfd10d23392, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  backCam: {fileID: 783891842}
-  resWidth: 1280
-  resHeight: 720
-  frequency: 1
+  cameraObject: {fileID: 963194227}
+  cameraFrequency: 1
+  cameraTime: 10
+  imageWidth: 1280
+  imageHeight: 720
 --- !u!4 &249664644
 Transform:
   m_ObjectHideFlags: 0
@@ -324,7 +325,7 @@ Camera:
   field of view: 30
   orthographic: 0
   orthographic size: 5
-  m_Depth: -1
+  m_Depth: 1
   m_CullingMask:
     serializedVersion: 2
     m_Bits: 4294967295
@@ -637,7 +638,7 @@ Camera:
   field of view: 30
   orthographic: 0
   orthographic size: 5
-  m_Depth: -1
+  m_Depth: 2
   m_CullingMask:
     serializedVersion: 2
     m_Bits: 4294967295
@@ -740,7 +741,7 @@ Camera:
   field of view: 30
   orthographic: 0
   orthographic size: 5
-  m_Depth: -1
+  m_Depth: 4
   m_CullingMask:
     serializedVersion: 2
     m_Bits: 4294967295
@@ -1113,12 +1114,12 @@ Camera:
   field of view: 30
   orthographic: 0
   orthographic size: 5
-  m_Depth: -1
+  m_Depth: 3
   m_CullingMask:
     serializedVersion: 2
     m_Bits: 4294967295
   m_RenderingPath: -1
-  m_TargetTexture: {fileID: 8400000, guid: 137e18694097d574d982124681031183, type: 2}
+  m_TargetTexture: {fileID: 0}
   m_TargetDisplay: 0
   m_TargetEye: 3
   m_HDR: 1
