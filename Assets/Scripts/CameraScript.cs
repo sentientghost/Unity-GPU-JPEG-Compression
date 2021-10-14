@@ -117,7 +117,7 @@ public class CameraScript : MonoBehaviour
         startTime = Time.realtimeSinceStartup;
         cameraObject.Render();
         endTime = Time.realtimeSinceStartup;
-        times[0] = (endTime - startTime) * 1000;
+        times[0] += ((endTime - startTime) * 1000);
 
         // The Render Texture in RenderTexture.active is the one that will be read by ReadPixels
         RenderTexture.active = cameraObject.targetTexture;
@@ -127,14 +127,14 @@ public class CameraScript : MonoBehaviour
         startTime = Time.realtimeSinceStartup;
         image.ReadPixels(new Rect(0, 0, imageWidth, imageHeight), 0, 0);
         endTime = Time.realtimeSinceStartup;
-        times[1] = (endTime - startTime) * 1000;
+        times[1] += ((endTime - startTime) * 1000);
 
         // ENCODE/COMPRESS
         // Encode the texture in JPG format
         startTime = Time.realtimeSinceStartup;
         byte[] bytes = image.EncodeToJPG(cameraQuality);
         endTime = Time.realtimeSinceStartup;
-        times[2] = (endTime - startTime) * 1000;
+        times[2] += ((endTime - startTime) * 1000);
 
         // WRITE/SAVE
         // Write the returned byte array to a file
@@ -142,7 +142,7 @@ public class CameraScript : MonoBehaviour
         startTime = Time.realtimeSinceStartup;
         System.IO.File.WriteAllBytes(filename, bytes);
         endTime = Time.realtimeSinceStartup;
-        times[3] = (endTime - startTime) * 1000;
+        times[3] += ((endTime - startTime) * 1000);
     }
 
     string ImageName()
@@ -164,10 +164,16 @@ public class CameraScript : MonoBehaviour
         float cullTime = renderTimes[1] - renderTimes[0];
         float renderTime = renderTimes[2] - renderTimes[1];
 
+        // Calculate Average
+        times[0] = times[0] / imageCountActual;
+        times[1] = times[1] / imageCountActual;
+        times[2] = times[2] / imageCountActual;
+        times[3] = times[3] / imageCountActual;
+
         Debug.Log("Time Elasped: " + timeElapsed);
         Debug.Log("Image Count: " + imageCountIdeal + " (ideal), " + imageCountActual + " (actual)");
-        Debug.Log("PreCull: " + renderTimes[0] + ", PreRender: " + renderTimes[1] + ", PostRender: " + renderTimes[2]);
-        Debug.Log("Cull Time: " + cullTime + ", Render Time: " + renderTime);
+        //Debug.Log("PreCull: " + renderTimes[0] + ", PreRender: " + renderTimes[1] + ", PostRender: " + renderTimes[2]);
+        //Debug.Log("Cull Time: " + cullTime + ", Render Time: " + renderTime);
         Debug.Log("Render: " + times[0] + " ms, Read/Copy: " + times[1] + " ms, Encode/Compress: " + times[2] + " ms, Write/Save: " + times[3] + " ms");
     }
 

@@ -249,8 +249,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   cameraObject: {fileID: 1469731156}
   cameraQuality: 75
-  cameraFrequency: 1
-  cameraTime: 2
+  cameraFrequency: 25
+  cameraTime: 10
   resolution: 720
 --- !u!4 &249664644
 Transform:
