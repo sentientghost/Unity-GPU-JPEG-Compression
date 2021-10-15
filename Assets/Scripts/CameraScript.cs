@@ -41,7 +41,7 @@ public class CameraScript : MonoBehaviour
             imageHeight = cameraObject.targetTexture.height;
         }
 
-        cameraObject.gameObject.SetActive(false);
+        //cameraObject.gameObject.SetActive(false);
     }
 
     void Start() 
@@ -132,6 +132,7 @@ public class CameraScript : MonoBehaviour
         // ENCODE/COMPRESS
         // Encode the texture in JPG format
         startTime = Time.realtimeSinceStartup;
+        //byte[] bytes = image.EncodeToPNG();
         byte[] bytes = image.EncodeToJPG(cameraQuality);
         endTime = Time.realtimeSinceStartup;
         times[2] += ((endTime - startTime) * 1000);
