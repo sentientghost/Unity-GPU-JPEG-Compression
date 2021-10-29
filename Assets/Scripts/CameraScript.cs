@@ -26,7 +26,8 @@ public class CameraScript : MonoBehaviour
     int imageCountActual = 0;
 
     LinearScript linear;
-    CoroutinesScript coroutine;
+    CoroutinesScript coroutines;
+    JobsScript jobs;
     void Awake() 
     {
         if (cameraObject.targetTexture == null)
@@ -46,7 +47,8 @@ public class CameraScript : MonoBehaviour
     void Start() 
     {
         //linear = gameObject.GetComponent<LinearScript> ();
-        coroutine = gameObject.GetComponent<CoroutinesScript> ();
+        //coroutines = gameObject.GetComponent<CoroutinesScript> ();
+        jobs = gameObject.GetComponent<JobsScript> ();
 
         intervalTime = Time.fixedTime + (1.0f/cameraFrequency);
     }
@@ -69,7 +71,8 @@ public class CameraScript : MonoBehaviour
         if ((Time.fixedTime >= intervalTime) && (imageCountActual <= 244))
         {
             //imageTimes = linear.CallTakeImage(imageWidth, imageHeight, cameraObject, cameraQuality);
-            imageTimes = coroutine.StartTakeImage(imageWidth, imageHeight, cameraObject, cameraQuality);
+            //imageTimes = coroutines.StartTakeImage(imageWidth, imageHeight, cameraObject, cameraQuality);
+            imageTimes = jobs.CallTakeImage(imageWidth, imageHeight, cameraObject, cameraQuality);
             times[0] += imageTimes[0];
             times[1] += imageTimes[1];
             times[2] += imageTimes[2];

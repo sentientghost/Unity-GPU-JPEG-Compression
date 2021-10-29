@@ -6,7 +6,7 @@ using UnityEngine;
 
 public class JobsScript : MonoBehaviour 
 {
-    float[] CallTakeImage(int imageWidth, int imageHeight, Camera cameraObject, int cameraQuality)
+    public float[] CallTakeImage(int imageWidth, int imageHeight, Camera cameraObject, int cameraQuality)
     {
         // Create time variables
         float startTime = 1.0f;
@@ -25,7 +25,7 @@ public class JobsScript : MonoBehaviour
         startTime = Time.realtimeSinceStartup;
         cameraObject.Render();
         endTime = Time.realtimeSinceStartup;
-        times[0] += ((endTime - startTime) * 1000);
+        times[0] = ((endTime - startTime) * 1000);
 
         // The Render Texture in RenderTexture.active is the one that will be read by ReadPixels
         RenderTexture.active = cameraObject.targetTexture;
@@ -35,14 +35,14 @@ public class JobsScript : MonoBehaviour
         startTime = Time.realtimeSinceStartup;
         image.ReadPixels(new Rect(0, 0, imageWidth, imageHeight), 0, 0);
         endTime = Time.realtimeSinceStartup;
-        times[1] += ((endTime - startTime) * 1000);
+        times[1] = ((endTime - startTime) * 1000);
 
         // ENCODE/COMPRESS
         // Encode the texture in JPG format
         startTime = Time.realtimeSinceStartup;
         byte[] bytes = image.EncodeToJPG(cameraQuality);
         endTime = Time.realtimeSinceStartup;
-        times[2] += ((endTime - startTime) * 1000);
+        times[2] = ((endTime - startTime) * 1000);
 
         // WRITE/SAVE
         // Write the returned byte array to a file
@@ -50,7 +50,7 @@ public class JobsScript : MonoBehaviour
         startTime = Time.realtimeSinceStartup;
         System.IO.File.WriteAllBytes(filename, bytes);
         endTime = Time.realtimeSinceStartup;
-        times[3] += ((endTime - startTime) * 1000);
+        times[3] = ((endTime - startTime) * 1000);
 
         // Return performance metrics
         // returns the render, copy, encode and write times
