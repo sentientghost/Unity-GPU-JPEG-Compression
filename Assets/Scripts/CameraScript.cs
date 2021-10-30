@@ -27,7 +27,6 @@ public class CameraScript : MonoBehaviour
 
     LinearScript linear;
     CoroutinesScript coroutines;
-    JobsScript jobs;
     void Awake() 
     {
         if (cameraObject.targetTexture == null)
@@ -48,7 +47,6 @@ public class CameraScript : MonoBehaviour
     {
         //linear = gameObject.GetComponent<LinearScript> ();
         //coroutines = gameObject.GetComponent<CoroutinesScript> ();
-        jobs = gameObject.GetComponent<JobsScript> ();
 
         intervalTime = Time.fixedTime + (1.0f/cameraFrequency);
     }
@@ -72,7 +70,6 @@ public class CameraScript : MonoBehaviour
         {
             //imageTimes = linear.CallTakeImage(imageWidth, imageHeight, cameraObject, cameraQuality);
             //imageTimes = coroutines.StartTakeImage(imageWidth, imageHeight, cameraObject, cameraQuality);
-            imageTimes = jobs.CallTakeImage(imageWidth, imageHeight, cameraObject, cameraQuality);
             times[0] += imageTimes[0];
             times[1] += imageTimes[1];
             times[2] += imageTimes[2];
