@@ -1,9 +1,10 @@
+using System;
+using System.Text;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEditor;
 using UnityEngine;
 using UnityEngine.SceneManagement;
-
 
 public class CameraScript : MonoBehaviour 
 {
@@ -36,7 +37,8 @@ public class CameraScript : MonoBehaviour
     // second bracket is resolutions (144, 240, 360, 480, 720, 1080, 1440)
     // third bracket is jpeg qualities (75, 80, 85, 90, 95, 100)
     // fourth bracket is performance metrics (render, copy, encode, write)
-    float[,,,] staticScene = new float[2, 7, 6, 4];
+    // fifth bracket is raw data for that performance metric (250 samples)
+    float[,,,,] staticScene = new float[2, 7, 6, 4, 250];
 
     void Awake() 
     {
@@ -62,6 +64,8 @@ public class CameraScript : MonoBehaviour
         qualityCount = 0; 
 
         intervalTime = Time.fixedTime + (1.0f/cameraFrequency);
+
+        OutputMetrics();
     }
 
     void Update() 
@@ -76,72 +80,70 @@ public class CameraScript : MonoBehaviour
 
     void FixedUpdate() 
     {
-        if (Time.fixedTime >= intervalTime)
-        {   
-            if (bufferFlag == true)
-            {
-                if (bufferCount == (bufferTime * cameraFrequency))
-                {
-                    bufferCount = 0;
-                    bufferFlag = false;
+        // if (Time.fixedTime >= intervalTime)
+        // {   
+        //     if (bufferFlag == true)
+        //     {
+        //         if (bufferCount == (bufferTime * cameraFrequency))
+        //         {
+        //             bufferCount = 0;
+        //             bufferFlag = false;
 
-                    Debug.Log("Buffer Time Elasped: " + (timeElapsed - bufferTimeElapsed) + " s");
-                }
-                else if (bufferCount == 0)
-                {
-                    bufferTimeElapsed = timeElapsed;
+        //             Debug.Log("Buffer Time Elasped: " + (timeElapsed - bufferTimeElapsed) + " s");
+        //         }
+        //         else if (bufferCount == 0)
+        //         {
+        //             bufferTimeElapsed = timeElapsed;
 
-                    ballObject.transform.position = new Vector3(0, 2, 0);
-                    ballObject.transform.rotation = Quaternion.Euler(0, 0, 0);
-                    ballObject.GetComponent<Rigidbody>().velocity = Vector3.zero;
-                    ballObject.GetComponent<Rigidbody>().angularVelocity = Vector3.zero;
+        //             ballObject.transform.position = new Vector3(0, 2, 0);
+        //             ballObject.transform.rotation = Quaternion.Euler(0, 0, 0);
+        //             ballObject.GetComponent<Rigidbody>().velocity = Vector3.zero;
+        //             ballObject.GetComponent<Rigidbody>().angularVelocity = Vector3.zero;
 
-                    bufferCount += 1;
-                }
-                else
-                {
-                    bufferCount += 1;
-                }
-            }
-            else
-            {
+        //             bufferCount += 1;
+        //         }
+        //         else
+        //         {
+        //             bufferCount += 1;
+        //         }
+        //     }
+        //     else
+        //     {
+        //         if (testFlag)
+        //         {
+        //             //SaveScreenJPG();
+                
+        //             if (frameCount >= 250)
+        //             {
+        //                 frameCount = 0;
+        //                 imageCount += 1;
 
-                if (frameCount >= 250)
-                {
-                    frameCount = 0;
-                    imageCount += 1;
+        //                 Debug.Log("Time Elasped: " + timeElapsed + " s");
+        //                 Debug.Log("Total Images Saved: " + (imageCount*250 + frameCount));
+        //                 Debug.Log("Counts: " + codeCount + " " + resolutionCount + " " + qualityCount);
 
-                    Debug.Log("Time Elasped: " + timeElapsed + " s");
-                    Debug.Log("Total Images Saved: " + (imageCount*250 + frameCount));
-                    Debug.Log("Counts: " + codeCount + " " + resolutionCount + " " + qualityCount);
-
-                    IncrementCounts();
-
-                    bufferFlag = true;
-                }
-                else
-                {
-                    frameCount += 1;
-                }
-
-                //SaveScreenJPG();
-
-                if (!testFlag)
-                {
-                    exitFlag = true;
-                }
-            }
+        //                 IncrementCounts();
+        //             }
+        //             else
+        //             {
+        //                 frameCount += 1;
+        //             }
+        //         }
+        //         else
+        //         {
+        //             OutputMetrics();
+        //         }
+        //     }
             
-            intervalTime = Time.fixedTime + (1.0f/cameraFrequency);
-        }
+        //     intervalTime = Time.fixedTime + (1.0f/cameraFrequency);
+        // }
     }
 
     void OnDisable()
     {
         Debug.Log("Time Elasped: " + timeElapsed + " s");
         Debug.Log("Total Images Saved: " + (imageCount*250 + frameCount));
-        Debug.Log("Raw Data stored to: -");
-        Debug.Log("Test Completed");
+        Debug.Log("Success!!! Test Completed");
     }
 
     int[] CalculateImageSize(int resolution)
@@ -172,6 +174,8 @@ public class CameraScript : MonoBehaviour
                 resolutionCount = 0;
             }
         }
+
+        bufferFlag = true;
     }
 
     void SaveScreenJPG ()
@@ -190,7 +194,53 @@ public class CameraScript : MonoBehaviour
 
         for (int metricCount = 0; metricCount <= 3; metricCount++)
         {
-            staticScene[codeCount, resolutionCount, qualityCount, metricCount] = imageTimes[metricCount];
+            staticScene[codeCount, resolutionCount, qualityCount, metricCount, frameCount] = imageTimes[metricCount];
         }
+    }
+
+    string ProcessData()
+    {
+        StringBuilder csvData = new StringBuilder();
+
+        // column headings
+        string[] codeType = new string[2] {"linear", "coroutines"};
+        string[] imageResolution = new string[7] {"144p", "240p", "360p", "480p", "720p", "1080p", "1440p"};
+        string[] qualityLevel = new string[6] {"75", "80", "85", "90", "95", "100"};
+        string[] metric = new string[4] {"render", "copy", "encode", "write"};
+        
+        for(int i = 0; i < 2; i++)
+        {
+            for(int j = 0; j < 7; j++)
+            {
+                for(int k = 0; k < 6; k++)
+                {
+                    for(int l = 0; l < 4; l++)
+                    {
+                        string columnHeading = codeType[i] + "_" + imageResolution[j] + "_" + qualityLevel[k] + "_" + metric[l] + ",";
+                        csvData.Append(columnHeading);
+                    }
+                }
+            }
+        }
+        
+        // foreach(var frame in keyFrames)
+        // {
+        //     sb.Append('\n').Append(frame.Time.ToString()).Append(',').Append(frame.Value.ToString());
+        // }
+
+        return csvData.ToString();
+    }
+
+    string FilePath()
+    {
+        return string.Format("{0}/../Metrics/Current Performance/{1}_Editor.csv", Application.dataPath, SceneManager.GetActiveScene().name);
+    }
+
+    void OutputMetrics()
+    {
+        string csvData = ProcessData();
+        string filePath = FilePath();
+        System.IO.File.WriteAllText(filePath, csvData);
+        Debug.Log($"Current Performance Metrics written to \"{filePath}\"");
     }
 }

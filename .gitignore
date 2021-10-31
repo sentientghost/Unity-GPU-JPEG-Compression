@@ -62,3 +62,6 @@ crashlytics-build.properties
 # Images directory
 Images/
 
+# Metrics directory
+Metrics/
+
