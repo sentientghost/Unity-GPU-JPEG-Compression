@@ -10,6 +10,8 @@ public class CameraScript : MonoBehaviour
 {
     [Header("Camera Settings")]
     [SerializeField] Camera cameraObject;
+    [Header("Ball Settings")]
+    public GameObject ballPrefab;
     GameObject ballObject;
     bool bufferFlag = true;
     bool exitFlag = false;
@@ -54,7 +56,8 @@ public class CameraScript : MonoBehaviour
         linearScript = gameObject.GetComponent<LinearScript> ();
         coroutinesScript = gameObject.GetComponent<CoroutinesScript> ();
 
-        ballObject = GameObject.Find("Ball");
+        string objectName = SceneManager.GetActiveScene().name + "SceneBall";
+        ballObject = GameObject.Find(objectName);
         
         frameCount = 0;
         imageCount = 0;
@@ -72,7 +75,7 @@ public class CameraScript : MonoBehaviour
     {
         timeElapsed += Time.deltaTime;
 
-        if (SceneManager.GetActiveScene().buildIndex == 3 && exitFlag == true)
+        if (SceneManager.GetActiveScene().buildIndex == 4 && exitFlag == true)
         {
             EditorApplication.isPlaying = false;
         }
@@ -82,9 +85,10 @@ public class CameraScript : MonoBehaviour
     {
         if (timeElapsed >= 5)
         {
-            SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex + 1);
+            SceneManager.LoadScene((SceneManager.GetActiveScene().buildIndex + 1) % 4, LoadSceneMode.Single);
             timeElapsed = 0;
         }
+
         // if (Time.fixedTime >= intervalTime)
         // {   
         //     if (bufferFlag == true)
@@ -100,10 +104,8 @@ public class CameraScript : MonoBehaviour
         //         {
         //             bufferTimeElapsed = timeElapsed;
 
-        //             ballObject.transform.position = new Vector3(0, 2, 0);
-        //             ballObject.transform.rotation = Quaternion.Euler(0, 0, 0);
-        //             ballObject.GetComponent<Rigidbody>().velocity = Vector3.zero;
-        //             ballObject.GetComponent<Rigidbody>().angularVelocity = Vector3.zero;
+        //             Destroy(ballObject);
+        //             ballObject = Instantiate(ballPrefab);
 
         //             bufferCount += 1;
         //         }
@@ -116,7 +118,7 @@ public class CameraScript : MonoBehaviour
         //     {
         //         if (testFlag)
         //         {
-        //             SaveScreenJPG();
+        //             //SaveScreenJPG();
                 
         //             if (frameCount >= 250)
         //             {
