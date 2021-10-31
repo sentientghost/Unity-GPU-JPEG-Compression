@@ -9,9 +9,9 @@ public class CoroutinesScript : MonoBehaviour
     private Coroutine imageCoroutine;
     public float[] times = new float[4];
 
-    public float[] StartTakeImage(int imageWidth, int imageHeight, Camera cameraObject, int cameraQuality) 
+    public float[] CallTakeImage(int imageWidth, int imageHeight, Camera cameraObject, int cameraQuality) 
     {
-        imageCoroutine = StartCoroutine(CallTakeImage(imageWidth, imageHeight, cameraObject, cameraQuality));
+        imageCoroutine = StartCoroutine(TakeImage(imageWidth, imageHeight, cameraObject, cameraQuality));
         //yield return CallTakeImage(imageWidth, imageHeight, cameraObject, cameraQuality);
         
         // if (imageCoroutine != null)
@@ -22,7 +22,7 @@ public class CoroutinesScript : MonoBehaviour
         return times;
     }
 
-    public IEnumerator CallTakeImage(int imageWidth, int imageHeight, Camera cameraObject, int cameraQuality)
+    public IEnumerator TakeImage(int imageWidth, int imageHeight, Camera cameraObject, int cameraQuality)
     {
         // Read the screen buffer after rendering is complete
         yield return new WaitForEndOfFrame();
