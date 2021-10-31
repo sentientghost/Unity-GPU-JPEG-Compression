@@ -32,13 +32,13 @@ public class CameraScript : MonoBehaviour
     int resolutionCount;
     int qualityCount;
 
-    // staticScene such that:
+    // sceneMetrics such that:
     // first bracket is code types (linear, coroutines)
     // second bracket is resolutions (144, 240, 360, 480, 720, 1080, 1440)
     // third bracket is jpeg qualities (75, 80, 85, 90, 95, 100)
     // fourth bracket is performance metrics (render, copy, encode, write)
     // fifth bracket is raw data for that performance metric (250 samples)
-    float[,,,,] staticScene = new float[2, 7, 6, 4, 250];
+    float[,,,,] sceneMetrics = new float[2, 7, 6, 4, 250];
 
     void Awake() 
     {
@@ -72,7 +72,7 @@ public class CameraScript : MonoBehaviour
     {
         timeElapsed += Time.deltaTime;
 
-        if (exitFlag == true)
+        if (SceneManager.GetActiveScene().buildIndex == 3 && exitFlag == true)
         {
             EditorApplication.isPlaying = false;
         }
@@ -80,6 +80,11 @@ public class CameraScript : MonoBehaviour
 
     void FixedUpdate() 
     {
+        if (timeElapsed >= 5)
+        {
+            SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex + 1);
+            timeElapsed = 0;
+        }
         // if (Time.fixedTime >= intervalTime)
         // {   
         //     if (bufferFlag == true)
@@ -111,7 +116,7 @@ public class CameraScript : MonoBehaviour
         //     {
         //         if (testFlag)
         //         {
-        //             //SaveScreenJPG();
+        //             SaveScreenJPG();
                 
         //             if (frameCount >= 250)
         //             {
@@ -194,7 +199,7 @@ public class CameraScript : MonoBehaviour
 
         for (int metricCount = 0; metricCount <= 3; metricCount++)
         {
-            staticScene[codeCount, resolutionCount, qualityCount, metricCount, frameCount] = imageTimes[metricCount];
+            sceneMetrics[codeCount, resolutionCount, qualityCount, metricCount, frameCount] = imageTimes[metricCount];
         }
     }
 
@@ -208,32 +213,38 @@ public class CameraScript : MonoBehaviour
         string[] qualityLevel = new string[6] {"75", "80", "85", "90", "95", "100"};
         string[] metric = new string[4] {"render", "copy", "encode", "write"};
         
-        for(int i = 0; i < 2; i++)
+        for (int i = -1; i < 250; i++)
         {
-            for(int j = 0; j < 7; j++)
+            for(int j = 0; j < 2; j++)
             {
-                for(int k = 0; k < 6; k++)
+                for(int k = 0; k < 7; k++)
                 {
-                    for(int l = 0; l < 4; l++)
+                    for(int l = 0; l < 6; l++)
                     {
-                        string columnHeading = codeType[i] + "_" + imageResolution[j] + "_" + qualityLevel[k] + "_" + metric[l] + ",";
-                        csvData.Append(columnHeading);
+                        for(int m = 0; m < 4; m++)
+                        {
+                            if (i == -1)
+                            {
+                                string columnHeading = codeType[j] + "_" + imageResolution[k] + "_" + qualityLevel[l] + "_" + metric[m] + ",";
+                                csvData.Append(columnHeading);
+                            }
+                            else
+                            {
+                                csvData.Append(sceneMetrics[j, k, l, m, i].ToString()).Append(",");
+                            }
+                        }
                     }
                 }
             }
-        }
-        
-        // foreach(var frame in keyFrames)
-        // {
-        //     sb.Append('\n').Append(frame.Time.ToString()).Append(',').Append(frame.Value.ToString());
-        // }
+            csvData.Append("\n");
+        } 
 
         return csvData.ToString();
     }
 
     string FilePath()
     {
-        return string.Format("{0}/../Metrics/Current Performance/{1}_Editor.csv", Application.dataPath, SceneManager.GetActiveScene().name);
+        return string.Format("{0}/../Metrics/Current Performance/{1}-Scene_Editor-Mode.csv", Application.dataPath, SceneManager.GetActiveScene().name);
     }
 
     void OutputMetrics()
@@ -242,5 +253,6 @@ public class CameraScript : MonoBehaviour
         string filePath = FilePath();
         System.IO.File.WriteAllText(filePath, csvData);
         Debug.Log($"Current Performance Metrics written to \"{filePath}\"");
+        exitFlag = true;
     }
 }

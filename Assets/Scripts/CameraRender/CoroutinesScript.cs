@@ -7,7 +7,7 @@ using UnityEngine;
 public class CoroutinesScript : MonoBehaviour 
 {
     private Coroutine imageCoroutine;
-    public float[] times = new float[4];
+    float[] times = new float[4];
 
     public float[] CallTakeImage(int imageWidth, int imageHeight, Camera cameraObject, int cameraQuality) 
     {
@@ -22,7 +22,7 @@ public class CoroutinesScript : MonoBehaviour
         return times;
     }
 
-    public IEnumerator TakeImage(int imageWidth, int imageHeight, Camera cameraObject, int cameraQuality)
+    IEnumerator TakeImage(int imageWidth, int imageHeight, Camera cameraObject, int cameraQuality)
     {
         // Read the screen buffer after rendering is complete
         yield return new WaitForEndOfFrame();
