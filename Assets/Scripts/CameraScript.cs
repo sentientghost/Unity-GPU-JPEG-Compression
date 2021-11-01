@@ -68,87 +68,94 @@ public class CameraScript : MonoBehaviour
 
         intervalTime = Time.fixedTime + (1.0f/cameraFrequency);
 
-        OutputMetrics();
+        //pause the game physics
+        Physics.autoSimulation = false;
     }
 
     void Update() 
     {
         timeElapsed += Time.deltaTime;
 
-        if (SceneManager.GetActiveScene().buildIndex == 4 && exitFlag == true)
+        if (SceneManager.GetActiveScene().buildIndex == 3 && exitFlag == true)
         {
             EditorApplication.isPlaying = false;
+        }
+        else if (exitFlag == true)
+        {
+            // unloads current scene and loads the next scene in the build index
+            SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex + 1, LoadSceneMode.Single);
         }
     }
 
     void FixedUpdate() 
     {
-        if (timeElapsed >= 5)
-        {
-            SceneManager.LoadScene((SceneManager.GetActiveScene().buildIndex + 1) % 4, LoadSceneMode.Single);
-            timeElapsed = 0;
-        }
+        if (Time.fixedTime >= intervalTime)
+        {   
+            if (bufferFlag == true)
+            {
+                if (bufferCount == (bufferTime * cameraFrequency))
+                {
+                    bufferCount = 0;
+                    bufferFlag = false;
 
-        // if (Time.fixedTime >= intervalTime)
-        // {   
-        //     if (bufferFlag == true)
-        //     {
-        //         if (bufferCount == (bufferTime * cameraFrequency))
-        //         {
-        //             bufferCount = 0;
-        //             bufferFlag = false;
+                    Physics.autoSimulation = true;
 
-        //             Debug.Log("Buffer Time Elasped: " + (timeElapsed - bufferTimeElapsed) + " s");
-        //         }
-        //         else if (bufferCount == 0)
-        //         {
-        //             bufferTimeElapsed = timeElapsed;
+                    Debug.Log("Buffer Time Elasped: " + (timeElapsed - bufferTimeElapsed) + " s");
+                }
+                else if (bufferCount == 0)
+                {
+                    bufferTimeElapsed = timeElapsed;
 
-        //             Destroy(ballObject);
-        //             ballObject = Instantiate(ballPrefab);
+                    Destroy(ballObject);
+                    ballObject = Instantiate(ballPrefab);
 
-        //             bufferCount += 1;
-        //         }
-        //         else
-        //         {
-        //             bufferCount += 1;
-        //         }
-        //     }
-        //     else
-        //     {
-        //         if (testFlag)
-        //         {
-        //             //SaveScreenJPG();
+                    Physics.autoSimulation = false;
+
+                    bufferCount += 1;
+                }
+                else
+                {
+                    bufferCount += 1;
+                }
+            }
+            else
+            {
+                if (testFlag)
+                {
+                    SaveScreenJPG();
                 
-        //             if (frameCount >= 250)
-        //             {
-        //                 frameCount = 0;
-        //                 imageCount += 1;
+                    if (frameCount >= 250)
+                    {
+                        frameCount = 0;
+                        imageCount += 1;
 
-        //                 Debug.Log("Time Elasped: " + timeElapsed + " s");
-        //                 Debug.Log("Total Images Saved: " + (imageCount*250 + frameCount));
-        //                 Debug.Log("Counts: " + codeCount + " " + resolutionCount + " " + qualityCount);
+                        float progress = 100 * ((imageCount*250 + frameCount) / 21000f);
 
-        //                 IncrementCounts();
-        //             }
-        //             else
-        //             {
-        //                 frameCount += 1;
-        //             }
-        //         }
-        //         else
-        //         {
-        //             OutputMetrics();
-        //         }
-        //     }
+                        Debug.Log("Progress: " + progress.ToString("F2") + " %");
+                        Debug.Log("Time Elasped: " + timeElapsed + " s");
+                        Debug.Log("Image Count: " + (imageCount*250 + frameCount));
+                        Debug.Log("Counts: " + codeCount + " " + resolutionCount + " " + qualityCount);
+
+                        IncrementCounts();
+                    }
+                    else
+                    {
+                        frameCount += 1;
+                    }
+                }
+                else
+                {
+                    OutputMetrics();
+                }
+            }
             
-        //     intervalTime = Time.fixedTime + (1.0f/cameraFrequency);
-        // }
+            intervalTime = Time.fixedTime + (1.0f/cameraFrequency);
+        }
     }
 
     void OnDisable()
     {
-        Debug.Log("Time Elasped: " + timeElapsed + " s");
+        Debug.Log("Total Time Elasped: " + timeElapsed + " s");
         Debug.Log("Total Images Saved: " + (imageCount*250 + frameCount));
         Debug.Log("Success!!! Test Completed");
     }
