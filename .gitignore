@@ -65,3 +65,6 @@ Images/
 # Metrics directory
 Metrics/
 
+#Build directory
+Builds/
+

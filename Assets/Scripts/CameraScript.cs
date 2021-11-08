@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using UnityEditor;
 using UnityEngine;
 using UnityEngine.SceneManagement;
+using UnityEngine.Rendering;
 
 public class CameraScript : MonoBehaviour 
 {
@@ -16,6 +17,7 @@ public class CameraScript : MonoBehaviour
     bool bufferFlag = true;
     bool exitFlag = false;
     bool testFlag = true;
+    bool checkFlag = true;
     int cameraFrequency = 25;
     int bufferCount = 0;
     int bufferTime = 2; // in terms of seconds
@@ -33,6 +35,7 @@ public class CameraScript : MonoBehaviour
     int codeCount;
     int resolutionCount;
     int qualityCount;
+    string buildMode;
 
     // sceneMetrics such that:
     // first bracket is code types (linear, coroutines)
@@ -47,11 +50,23 @@ public class CameraScript : MonoBehaviour
         resolutions = new int[] {144, 240, 360, 480, 720, 1080, 1440};
         qualities = new int[] {75, 80, 85, 90, 95, 100};
         imageSize = CalculateImageSize(resolutions[0]);
-        cameraObject.targetTexture = new RenderTexture(imageSize[0], imageSize[1], 24);
     }
 
     void Start() 
     {
+        if (Application.isEditor)
+        {
+            buildMode = "Editor";
+        }
+        else if (Application.isBatchMode)
+        {
+            buildMode = "Build-Headless";
+        }
+        else
+        {
+            buildMode = "Build-Windowed";
+        }
+
         // Initialise Linear and Coroutines Scripts
         linearScript = gameObject.GetComponent<LinearScript> ();
         coroutinesScript = gameObject.GetComponent<CoroutinesScript> ();
@@ -78,7 +93,12 @@ public class CameraScript : MonoBehaviour
 
         if (SceneManager.GetActiveScene().buildIndex == 3 && exitFlag == true)
         {
+            // conditional compilation
+            #if UNITY_EDITOR
             EditorApplication.isPlaying = false;
+            #else
+            Application.Quit();
+            #endif
         }
         else if (exitFlag == true)
         {
@@ -122,8 +142,6 @@ public class CameraScript : MonoBehaviour
             {
                 if (testFlag)
                 {
-                    SaveScreenJPG();
-                
                     if (frameCount >= 250)
                     {
                         frameCount = 0;
@@ -132,14 +150,19 @@ public class CameraScript : MonoBehaviour
                         float progress = 100 * ((imageCount*250 + frameCount) / 21000f);
 
                         Debug.Log("Progress: " + progress.ToString("F2") + " %");
-                        Debug.Log("Time Elasped: " + timeElapsed + " s");
-                        Debug.Log("Image Count: " + (imageCount*250 + frameCount));
-                        Debug.Log("Counts: " + codeCount + " " + resolutionCount + " " + qualityCount);
+                        Debug.Log("Current Count Value: " + codeCount + " " + resolutionCount + " " + qualityCount);
 
                         IncrementCounts();
                     }
+                    else if (!checkFlag)
+                    {
+                        frameCount -= 1;
+                        checkFlag = SaveScreenJPG();
+                        frameCount += 1;
+                    }
                     else
                     {
+                        checkFlag = SaveScreenJPG();
                         frameCount += 1;
                     }
                 }
@@ -147,6 +170,7 @@ public class CameraScript : MonoBehaviour
                 {
                     OutputMetrics();
                 }
+                
             }
             
             intervalTime = Time.fixedTime + (1.0f/cameraFrequency);
@@ -163,7 +187,11 @@ public class CameraScript : MonoBehaviour
     int[] CalculateImageSize(int resolution)
     {
         float aspectRatio = 16.0f / 9.0f;
-        int[] imageWH = new int[2] {resolution, (int)(resolution * aspectRatio)};
+        int[] imageWH = new int[2] {(int)(resolution * aspectRatio), resolution};
+
+        UnityEngine.Object.Destroy(cameraObject.targetTexture);
+        cameraObject.targetTexture = new RenderTexture(imageWH[0], imageWH[1], 24);
+
         return imageWH;
     }
 
@@ -192,23 +220,31 @@ public class CameraScript : MonoBehaviour
         bufferFlag = true;
     }
 
-    void SaveScreenJPG ()
+    bool SaveScreenJPG ()
     {
         float[] imageTimes = new float[4];
         int[] imageWH = CalculateImageSize(resolutions[resolutionCount]);
 
         if (codeCount == 0)
         {
-            imageTimes = linearScript.CallTakeImage(imageWH[0], imageWH[1], cameraObject, qualities[qualityCount]);
+            imageTimes = linearScript.CallTakeImage(imageWH[0], imageWH[1], cameraObject, qualities[qualityCount], frameCount);
         }
         else if (codeCount == 1)
         {
-            imageTimes = coroutinesScript.CallTakeImage(imageWH[0], imageWH[1], cameraObject, qualities[qualityCount]);
+            imageTimes = coroutinesScript.CallTakeImage(imageWH[0], imageWH[1], cameraObject, qualities[qualityCount], frameCount);
         }
 
-        for (int metricCount = 0; metricCount <= 3; metricCount++)
+        if (imageTimes[0] == 0 && imageTimes[1] == 0 && imageTimes[2] == 0 && imageTimes[3] == 0)
         {
-            sceneMetrics[codeCount, resolutionCount, qualityCount, metricCount, frameCount] = imageTimes[metricCount];
+            return false;
+        }
+        else
+        {
+            for (int metricCount = 0; metricCount <= 3; metricCount++)
+            {
+                sceneMetrics[codeCount, resolutionCount, qualityCount, metricCount, frameCount] = imageTimes[metricCount];
+            }
+            return true;
         }
     }
 
@@ -253,7 +289,14 @@ public class CameraScript : MonoBehaviour
 
     string FilePath()
     {
-        return string.Format("{0}/../Metrics/Current Performance/{1}-Scene_Editor-Mode.csv", Application.dataPath, SceneManager.GetActiveScene().name);
+        if (buildMode == "Editor")
+        {
+            return string.Format("{0}/../Metrics/Current Performance/{1}-Scene_{2}-Mode.csv", Application.dataPath, SceneManager.GetActiveScene().name, buildMode);
+        }
+        else
+        {
+            return string.Format("{0}/../../../Metrics/Current Performance/{1}-Scene_{2}-Mode.csv", Application.dataPath, SceneManager.GetActiveScene().name, buildMode);
+        }    
     }
 
     void OutputMetrics()
