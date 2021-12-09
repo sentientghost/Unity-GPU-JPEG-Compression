@@ -8,42 +8,50 @@ using UnityEngine.Rendering;
 
 public class CoroutinesScript : MonoBehaviour 
 {
+    // Global variables
     private Coroutine imageCoroutine;
     Texture2D imageTexture;
     float[] times = new float[4];
     string buildMode;
 
+
+    /**** MONOBEHAVIOUR EVENT FUNCTIONS ****/
+
+    // Called before the first frame update
     void Start() 
     {
+        // Check which build mode Unity is running in
         if (Application.isEditor)
         {
             buildMode = "Editor";
         }
         else if (Application.isBatchMode)
         {
-            buildMode = "Build Headless";
+            buildMode = "Batch";
         }
         else
         {
-            buildMode = "Build Windowed";
+            buildMode = "Windowed";
         }
 
+        // Initialize the image texture as 144p
         imageTexture = new Texture2D(256, 144, TextureFormat.RGB24, false);
     }
     
+
+    /**** USER DEFINED FUNCTIONS ****/
+
+    // Function to start the coroutine
     public float[] CallTakeImage(int imageWidth, int imageHeight, Camera cameraObject, int cameraQuality, int frameCount) 
     {
+        // Start "Take Image" coroutine
         imageCoroutine = StartCoroutine(TakeImage(imageWidth, imageHeight, cameraObject, cameraQuality, frameCount));
-        //yield return CallTakeImage(imageWidth, imageHeight, cameraObject, cameraQuality);
-        
-        // if (imageCoroutine != null)
-        // {
-        //     StopCoroutine(imageCoroutine);
-        // }
 
+        // Return the image times
         return times;
     }
 
+    // Coroutine function to take image from the screen
     IEnumerator TakeImage(int imageWidth, int imageHeight, Camera cameraObject, int cameraQuality, int frameCount)
     {
         // Read the screen buffer after rendering is complete
@@ -89,22 +97,23 @@ public class CoroutinesScript : MonoBehaviour
         // Write the returned byte array to a file
         string filename = ImageName(imageHeight, cameraQuality, frameCount);
         startTime = Time.realtimeSinceStartup;
-        //yield return new WaitUntil(System.IO.File.WriteAllBytes(filename, bytes));
         System.IO.File.WriteAllBytes(filename, bytes);
         endTime = Time.realtimeSinceStartup;
         times[3] = ((endTime - startTime) * 1000);
-
-        //StopCoroutine(imageCoroutine);
     }
 
+    // Function to return the filepath with an appropriate image name
     string ImageName(int imageHeight, int cameraQuality, int frameCount)
     {
+        // Check the build mode of Unity
         if (buildMode == "Editor")
         {
+            // Return filepath with appropriate image name for editor mode
             return string.Format("{0}/../Images/Current Performance/{1} Mode/{2} Scene/coroutines_{3}p_{4}_{5}.jpg", Application.dataPath, buildMode, SceneManager.GetActiveScene().name, imageHeight, cameraQuality, frameCount+1);
         }   
         else
         {
+            // Return filepath with appropriate image name for windowed and batch mode
             return string.Format("{0}/../../../Images/Current Performance/{1} Mode/{2} Scene/coroutines_{3}p_{4}_{5}.jpg", Application.dataPath, buildMode, SceneManager.GetActiveScene().name, imageHeight, cameraQuality, frameCount+1);
         }
     }

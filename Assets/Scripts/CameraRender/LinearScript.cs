@@ -8,27 +8,38 @@ using UnityEngine.Rendering;
 
 public class LinearScript : MonoBehaviour 
 {
+    // Global variables
     Texture2D imageTexture;
     string buildMode;
 
+
+    /**** MONOBEHAVIOUR EVENT FUNCTIONS ****/
+
+    // Called before the first frame update
     void Start() 
     {
+        // Check which build mode Unity is running in
         if (Application.isEditor)
         {
             buildMode = "Editor";
         }
         else if (Application.isBatchMode)
         {
-            buildMode = "Build Headless";
+            buildMode = "Batch";
         }
         else
         {
-            buildMode = "Build Windowed";
+            buildMode = "Windowed";
         }
         
+        // Initialize the image texture as 144p
         imageTexture = new Texture2D(256, 144, TextureFormat.RGB24, false);
     }
 
+
+    /**** USER DEFINED FUNCTIONS ****/
+
+    // Function to take image from the screen
     public float[] CallTakeImage(int imageWidth, int imageHeight, Camera cameraObject, int cameraQuality, int frameCount)
     {
         // Create time variables
@@ -81,14 +92,18 @@ public class LinearScript : MonoBehaviour
         return times;
     }
 
+    // Function to return the filepath with an appropriate image name
     string ImageName(int imageHeight, int cameraQuality, int frameCount)
     {
+        // Check the build mode of Unity
         if (buildMode == "Editor")
         {
+            // Return filepath with appropriate image name for editor mode
             return string.Format("{0}/../Images/Current Performance/{1} Mode/{2} Scene/linear_{3}p_{4}_{5}.jpg", Application.dataPath, buildMode, SceneManager.GetActiveScene().name, imageHeight, cameraQuality, frameCount+1);
         }   
         else
         {
+            // Return filepath with appropriate image name for windowed and batch mode
             return string.Format("{0}/../../../Images/Current Performance/{1} Mode/{2} Scene/linear_{3}p_{4}_{5}.jpg", Application.dataPath, buildMode, SceneManager.GetActiveScene().name, imageHeight, cameraQuality, frameCount+1);
         }
     }
