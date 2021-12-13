@@ -1,188 +1,389 @@
+using System;
+using System.Text;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEditor;
 using UnityEngine;
+using UnityEngine.SceneManagement;
+using UnityEngine.Rendering;
 
 
 public class CameraScript : MonoBehaviour 
 {
-    enum Resolutions { _1440p = 1440, _1080p = 1080, _720p = 720, _480p = 480, _360p = 360, _240p = 240, _144p = 144 }
-
+    // Editor Options
     [Header("Camera Settings")]
     [SerializeField] Camera cameraObject;
-    [SerializeField] int cameraQuality = 75;
-    [SerializeField] int cameraFrequency = 25;
-    [SerializeField] float cameraTime = 10.0f;
+    [Header("Ball Settings")]
+    public GameObject ballPrefab;
 
-    [Header("Resolution")]
-    [SerializeField] Resolutions resolution = Resolutions._720p;
-    int imageWidth;
-    int imageHeight;
+    // Flags to track progress of code
+    bool bufferFlag = true;
+    bool exitFlag = false;
+    bool testFlag = true;
+    bool checkFlag = true;
 
+    // Test parameters
+    int cameraFrequency = 25;
+    int bufferTime = 2; 
+    int bufferCount = 0;
+    int frameCount;
+    int imageCount;
+    int codeCount;
+    int resolutionCount;
+    int qualityCount;
+    string buildMode;
+    int[] resolutions;
+    int[] qualities;
     float intervalTime;
     float timeElapsed;
-    float[] renderTimes = new float[3];
-    float[] times = new float[4];
-    int imageCountIdeal = 0;
-    int imageCountActual = 0;
+    float bufferTimeElapsed;
+    int[] imageSize = new int[2];
+    GameObject ballObject;
 
+    // Script References
+    LinearScript linearScript;
+    CoroutinesScript coroutinesScript;
+
+    // Scene metrics such that:
+    // 1st bracket is code types (linear, coroutines)
+    // 2nd bracket is resolutions (144, 240, 360, 480, 720, 1080, 1440)
+    // 3rd bracket is jpeg qualities (75, 80, 85, 90, 95, 100)
+    // 4th bracket is performance metrics (render, copy, encode, write)
+    // 5th bracket is raw data for that performance metric (250 samples)
+    float[,,,,] sceneMetrics = new float[2, 7, 6, 4, 250];
+
+
+    /**** MONOBEHAVIOUR EVENT FUNCTIONS ****/
+
+    // Called when the scene starts but before the start function
     void Awake() 
     {
-        if (cameraObject.targetTexture == null)
+        // Define the image resolutions and JPEG qualities 
+        resolutions = new int[] {144, 240, 360, 480, 720, 1080, 1440};
+        qualities = new int[] {75, 80, 85, 90, 95, 100};
+
+        // Initialize the first render texture and set it to the camera target texture
+        imageSize = CalculateImageSize(resolutions[0]);
+    }
+
+    // Called before the first frame update
+    void Start() 
+    {
+        // Check which build mode Unity is running in
+        if (Application.isEditor)
         {
-            float aspectRatio = 16.0f / 9.0f;
-            imageHeight = (int)resolution;
-            imageWidth = (int)(imageHeight * aspectRatio);
-            cameraObject.targetTexture = new RenderTexture(imageWidth, imageHeight, 24);
+            buildMode = "Editor";
+        }
+        else if (Application.isBatchMode)
+        {
+            buildMode = "Batch";
         }
         else
         {
-            imageWidth = cameraObject.targetTexture.width;
-            imageHeight = cameraObject.targetTexture.height;
+            buildMode = "Windowed";
         }
 
-        //cameraObject.gameObject.SetActive(false);
-    }
+        // Initialize Linear and Coroutines Scripts
+        linearScript = gameObject.GetComponent<LinearScript> ();
+        coroutinesScript = gameObject.GetComponent<CoroutinesScript> ();
 
-    void Start() 
-    {
+        // Initialize ball reference for the scene
+        string objectName = SceneManager.GetActiveScene().name + "SceneBall";
+        ballObject = GameObject.Find(objectName);
+        
+        // Initialize counts to zero
+        frameCount = 0;
+        imageCount = 0;
+        codeCount = 0; 
+        resolutionCount = 0; 
+        qualityCount = 0; 
+
+        // Initialize the interval time based on camera frequency
         intervalTime = Time.fixedTime + (1.0f/cameraFrequency);
 
-        // Add your callback to the delegate's invocation list
-        Camera.onPreCull += OnPreCullCallback;
-        Camera.onPreRender += OnPreRenderCallback;
-        Camera.onPostRender += OnPostRenderCallback;
+        // Pause the game physics
+        Physics.autoSimulation = false;
     }
 
+    // Called once per frame (main function for frame updates)
     void Update() 
     {
+        // Update the time elapsed since the start of the scene
         timeElapsed += Time.deltaTime;
 
-        if (cameraTime > 0)
+        // Check if exit condition is true
+        if (SceneManager.GetActiveScene().buildIndex == 3 && exitFlag == true)
         {
-            if (timeElapsed >= cameraTime)
-            {
-                EditorApplication.isPlaying = false;
-            }
+            // Conditional compilation to close Unity
+            #if UNITY_EDITOR
+            EditorApplication.isPlaying = false;
+            #else
+            Application.Quit();
+            #endif
+        }
+        else if (exitFlag == true)
+        {
+            // Unloads current scene and loads the next scene in the build index
+            SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex + 1, LoadSceneMode.Single);
         }
     }
 
-    void FixedUpdate() {
-        if (Time.fixedTime >= intervalTime) {
-            CallTakeImage();
-            imageCountActual += 1;
+    // Called on a timer (every 0.02s) which is independent of frame rate
+    void FixedUpdate() 
+    {
+        // Check if the time condition is true which is constraint by the camera frequency
+        if (Time.fixedTime >= intervalTime)
+        {   
+            // Check if it is buffer time or test time 
+            if (bufferFlag == true)
+            {
+                // Check if buffer time is finished
+                if (bufferCount == (bufferTime * cameraFrequency))
+                {
+                    // Reset buffer time and enable physics
+                    bufferCount = 0;
+                    bufferFlag = false;
+
+                    Physics.autoSimulation = true;
+
+                    Debug.Log("Buffer Time Elasped: " + (timeElapsed - bufferTimeElapsed) + " s");
+                }
+                else if (bufferCount == 0)
+                {
+                    // Instantiate ball prefab and disable physics
+                    bufferTimeElapsed = timeElapsed;
+
+                    Destroy(ballObject);
+                    ballObject = Instantiate(ballPrefab);
+
+                    Physics.autoSimulation = false;
+
+                    bufferCount += 1;
+                }
+                else
+                {
+                    // Increment the buffer count
+                    bufferCount += 1;
+                }
+            }
+            else
+            {
+                // Check if testing is complete
+                if (testFlag)
+                {
+                    // Check if 250 frames have elasped
+                    if (frameCount >= 250)
+                    {
+                        // Reset frame count and increment to next image
+                        frameCount = 0;
+                        imageCount += 1;
+
+                        // Update progress and output logs
+                        float progress = 100 * ((imageCount*250 + frameCount) / 21000f);
+                        Debug.Log("Progress: " + progress.ToString("F2") + " %");
+                        Debug.Log("Current Count Value: " + codeCount + " " + resolutionCount + " " + qualityCount);
+
+                        // Increment counts to start next test case
+                        IncrementCounts();
+                    }
+                    else if (!checkFlag)
+                    {
+                        // Retake image if it was previously unsuccessful
+                        frameCount -= 1;
+                        checkFlag = SaveScreenJPG();
+                        frameCount += 1;
+                    }
+                    else
+                    {
+                        // Take image and record if it was successful or not
+                        checkFlag = SaveScreenJPG();
+                        frameCount += 1;
+                    }
+                }
+                else
+                {
+                    // Output csv files 
+                    OutputMetrics();
+                }
+            }
+            
+            // Update the interval time
             intervalTime = Time.fixedTime + (1.0f/cameraFrequency);
         }
     }
-    
-    void OnPreCullCallback(Camera cam) 
-    {
-        if (cam == cameraObject)
-        {
-            renderTimes[0] = Time.realtimeSinceStartup;
-        }
-    }
 
-    void OnPreRenderCallback(Camera cam) 
-    {
-        if (cam == cameraObject)
-        {
-            renderTimes[1] = Time.realtimeSinceStartup;
-        }
-    }
-
-    void OnPostRenderCallback(Camera cam) 
-    {
-        if (cam == cameraObject)
-        {
-            renderTimes[2] = Time.realtimeSinceStartup;
-        }
-    }
-
-    void CallTakeImage()
-    {
-        // Create time variables
-        float startTime = 1.0f;
-        float endTime = 1.0f;
-
-        // Create a texture in RGB24 format with the specified width and height
-        Texture2D image = new Texture2D(imageWidth, imageHeight, TextureFormat.RGB24, false);
-
-        // RENDER
-        // Render the camera's view
-        // The camera will send OnPreCull, OnPreRender and OnPostRender
-        // OnPreCull - Event function that Unity calls before a Camera culls the scene
-        // OnPreRender - Event function that Unity calls before a Camera renders the scene
-        // OnPostRender - Event function that Unity calls after a Camera renders the scene
-        startTime = Time.realtimeSinceStartup;
-        cameraObject.Render();
-        endTime = Time.realtimeSinceStartup;
-        times[0] += ((endTime - startTime) * 1000);
-
-        // The Render Texture in RenderTexture.active is the one that will be read by ReadPixels
-        RenderTexture.active = cameraObject.targetTexture;
-
-        // READ/COPY
-        // Read the active render texture into the image texture (from screen to image texture)
-        startTime = Time.realtimeSinceStartup;
-        image.ReadPixels(new Rect(0, 0, imageWidth, imageHeight), 0, 0);
-        endTime = Time.realtimeSinceStartup;
-        times[1] += ((endTime - startTime) * 1000);
-
-        // ENCODE/COMPRESS
-        // Encode the texture in JPG format
-        startTime = Time.realtimeSinceStartup;
-        //byte[] bytes = image.EncodeToPNG();
-        byte[] bytes = image.EncodeToJPG(cameraQuality);
-        endTime = Time.realtimeSinceStartup;
-        times[2] += ((endTime - startTime) * 1000);
-
-        // WRITE/SAVE
-        // Write the returned byte array to a file
-        string filename = ImageName();
-        startTime = Time.realtimeSinceStartup;
-        System.IO.File.WriteAllBytes(filename, bytes);
-        endTime = Time.realtimeSinceStartup;
-        times[3] += ((endTime - startTime) * 1000);
-    }
-
-    string ImageName()
-    {
-        return string.Format("{0}/../Images/image_{1}x{2}_{3}.jpg", Application.dataPath, imageWidth, imageHeight, System.DateTime.Now.ToString("yyyy-MM-dd_HH-mm-ss.fff"));
-    }
-
+    // Called when the behaviour becomes disabled or inactive
     void OnDisable()
     {
-        if (cameraTime > 0)
+        // Output logs when scene is completed
+        Debug.Log("Total Time Elasped: " + timeElapsed + " s");
+        Debug.Log("Total Images Saved: " + (imageCount*250 + frameCount));
+        Debug.Log("Success!!! Test Completed");
+    }
+
+
+    /**** USER DEFINED FUNCTIONS ****/
+
+    // Function to calculate width and height based on resolution and aspect ratio
+    int[] CalculateImageSize(int resolution)
+    {
+        // Define aspect ratio and calculate the new width and height
+        float aspectRatio = 16.0f / 9.0f;
+        int[] imageWH = new int[2] {(int)(resolution * aspectRatio), resolution};
+
+        // Destroy previous targetTexture and initialize new render texture based on calculated width and height
+        UnityEngine.Object.Destroy(cameraObject.targetTexture);
+        cameraObject.targetTexture = new RenderTexture(imageWH[0], imageWH[1], 24);
+
+        // return int[] with width and height
+        return imageWH;
+    }
+
+    // Function to increment between different test cases using various counts
+    void IncrementCounts()
+    {
+        // Check if test case is complete based on count values
+        if (codeCount == 1 && resolutionCount == 6 && qualityCount == 5)
         {
-            imageCountIdeal = (int)(cameraTime * cameraFrequency);
+            testFlag = false;
+            return;
+        }
+
+        // Increment to next test case
+        qualityCount += 1;
+        if (qualityCount >= 6)
+        {
+            qualityCount = 0;
+            resolutionCount += 1;
+
+            if (resolutionCount >= 7)
+            {
+                codeCount = 1;
+                resolutionCount = 0;
+            }
+        }
+
+        // Enable buffer time
+        bufferFlag = true;
+    }
+
+    // Function to take image from the screen
+    bool SaveScreenJPG ()
+    {
+        // Initialize image times and the image width and height
+        float[] imageTimes = new float[4];
+        int[] imageWH = CalculateImageSize(resolutions[resolutionCount]);
+
+        // Check which script to run based on the code count
+        if (codeCount == 0)
+        {
+            // Take image using the linear script and save the image times
+            imageTimes = linearScript.CallTakeImage(imageWH[0], imageWH[1], cameraObject, qualities[qualityCount], frameCount);
+        }
+        else if (codeCount == 1)
+        {
+            // Take image using the coroutines script and save the image times
+            imageTimes = coroutinesScript.CallTakeImage(imageWH[0], imageWH[1], cameraObject, qualities[qualityCount], frameCount);
+        }
+
+        // Check if the scipts ran successfully based on the image times 
+        if (imageTimes[0] == 0 && imageTimes[1] == 0 && imageTimes[2] == 0 && imageTimes[3] == 0)
+        {
+            // Take image failed so return false
+            return false;
         }
         else
         {
-            imageCountIdeal = (int)(timeElapsed * cameraFrequency);
+            // Save image times to scene metrics
+            for (int metricCount = 0; metricCount <= 3; metricCount++)
+            {
+                sceneMetrics[codeCount, resolutionCount, qualityCount, metricCount, frameCount] = imageTimes[metricCount];
+            }
+
+            // Take is succeeded so return true
+            return true;
         }
-        
-        float cullTime = renderTimes[1] - renderTimes[0];
-        float renderTime = renderTimes[2] - renderTimes[1];
-
-        // Calculate Average
-        times[0] = times[0] / imageCountActual;
-        times[1] = times[1] / imageCountActual;
-        times[2] = times[2] / imageCountActual;
-        times[3] = times[3] / imageCountActual;
-
-        Debug.Log("Time Elasped: " + timeElapsed);
-        Debug.Log("Image Count: " + imageCountIdeal + " (ideal), " + imageCountActual + " (actual)");
-        //Debug.Log("PreCull: " + renderTimes[0] + ", PreRender: " + renderTimes[1] + ", PostRender: " + renderTimes[2]);
-        //Debug.Log("Cull Time: " + cullTime + ", Render Time: " + renderTime);
-        Debug.Log("Render: " + times[0] + " ms, Read/Copy: " + times[1] + " ms, Encode/Compress: " + times[2] + " ms, Write/Save: " + times[3] + " ms");
     }
 
-    void OnDestroy()
+    // Function to process the data from the float[] in scene metrics to string in csv data
+    string ProcessData()
     {
-        // Remove your callback from the delegate's invocation list
-        Camera.onPreCull -= OnPreCullCallback;
-        Camera.onPreRender -= OnPreRenderCallback;
-        Camera.onPostRender -= OnPostRenderCallback;
+        // Initialize string builder
+        StringBuilder csvData = new StringBuilder();
+
+        // Initialize column heading options
+        string[] codeType = new string[2] {"linear", "coroutines"};
+        string[] imageResolution = new string[7] {"144p", "240p", "360p", "480p", "720p", "1080p", "1440p"};
+        string[] qualityLevel = new string[6] {"75", "80", "85", "90", "95", "100"};
+        string[] metric = new string[4] {"render", "copy", "encode", "write"};
+        
+        // loop to iterate through each frame (250)
+        for (int i = -1; i < 250; i++)
+        {
+            // loop to iterate through each code type (2)
+            for(int j = 0; j < 2; j++)
+            {
+                // loop to iterate through each image resolution (7)
+                for(int k = 0; k < 7; k++)
+                {
+                    // loop to iterate through each JPEG quality (6)
+                    for(int l = 0; l < 6; l++)
+                    {
+                        // loop to iterate through each image metric (4)
+                        for(int m = 0; m < 4; m++)
+                        {
+                            // Check if it is the first row of the csv file
+                            if (i == -1)
+                            {
+                                // Add column headings to csv file
+                                string columnHeading = codeType[j] + "_" + imageResolution[k] + "_" + qualityLevel[l] + "_" + metric[m] + ",";
+                                csvData.Append(columnHeading);
+                            }
+                            else
+                            {
+                                // Add scene metrics to csv file
+                                csvData.Append(sceneMetrics[j, k, l, m, i].ToString()).Append(",");
+                            }
+                        }
+                    }
+                }
+            }
+            // Start new data on a next row
+            csvData.Append("\n");
+        } 
+
+        // Return csv data as a string
+        return csvData.ToString();
+    }
+
+    // Function to determine the correct filepath based on build mode and scene type 
+    string FilePath()
+    {
+        // Check the build mode of Unity
+        if (buildMode == "Editor")
+        {
+            // Return filepath for editor mode 
+            return string.Format("{0}/../Metrics/Current Performance/{1}-Mode_{2}-Scene.csv", Application.dataPath, buildMode, SceneManager.GetActiveScene().name);
+        }
+        else
+        {
+            // Return filepath for windowed and batch mode
+            return string.Format("{0}/../../../Metrics/Current Performance/{1}-Mode_{2}-Scene.csv", Application.dataPath, buildMode, SceneManager.GetActiveScene().name);
+        }    
+    }
+
+    // Function to save the scene metrics as a csv file
+    void OutputMetrics()
+    {
+        // Initialize the csv data and file path
+        string csvData = ProcessData();
+        string filePath = FilePath();
+
+        // Save/Write csv data to the filepath and output the logs
+        System.IO.File.WriteAllText(filePath, csvData);
+        Debug.Log($"Current Performance Metrics written to \"{filePath}\"");
+
+        // Set exit condition to be true
+        exitFlag = true;
     }
 }
