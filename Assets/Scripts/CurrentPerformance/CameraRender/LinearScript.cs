@@ -33,7 +33,7 @@ public class LinearScript : MonoBehaviour
         }
         
         // Initialize the image texture as 144p
-        imageTexture = new Texture2D(256, 144, TextureFormat.RGB24, false);
+        imageTexture = new Texture2D(256, 144, TextureFormat.ARGB32, false);
     }
 
 
@@ -47,9 +47,9 @@ public class LinearScript : MonoBehaviour
         float endTime = 1.0f;
         float[] times = new float[4];
 
-        // Create a texture in RGB24 format with the specified width and height
+        // Create a texture in ARGB32 format with the specified width and height
         UnityEngine.Object.Destroy(imageTexture);
-        imageTexture = new Texture2D(imageWidth, imageHeight, TextureFormat.RGB24, false);
+        imageTexture = new Texture2D(imageWidth, imageHeight, TextureFormat.ARGB32, false);
 
         // RENDER
         // Render the camera's view
@@ -66,6 +66,7 @@ public class LinearScript : MonoBehaviour
         RenderTexture.active = cameraObject.targetTexture;
 
         // READ/COPY
+        // GPU to CPU
         // Read the active render texture into the image texture (from screen to image texture)
         startTime = Time.realtimeSinceStartup;
         imageTexture.ReadPixels(new Rect(0, 0, imageWidth, imageHeight), 0, 0);

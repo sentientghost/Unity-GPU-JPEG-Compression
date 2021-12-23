@@ -39,17 +39,14 @@ public class DirectX11 : MonoBehaviour
         DebugDelegate callback_delegate = new DebugDelegate(CallBackFunction);
         // Convert callback_delegate into a function pointer that can be
         // used in unmanaged code.
-        IntPtr intptr_delegate =
-            Marshal.GetFunctionPointerForDelegate(callback_delegate);
+        IntPtr intptr_delegate = Marshal.GetFunctionPointerForDelegate(callback_delegate);
         // Call the API passing along the function pointer.
         SetDebugFunction(intptr_delegate);
 
-        Debug.Log("Check 1");
         //cameraObject = gameObject.GetComponent<Camera>();
  
         if (cameraObject != null && cameraObject.pixelHeight > 0 && cameraObject.pixelWidth > 0)
         {
-            Debug.Log("Check 2");
             CreateTextureAndPassToPlugin();
             yield return StartCoroutine("CallPluginAtEndOfFrames");
         }
@@ -58,19 +55,21 @@ public class DirectX11 : MonoBehaviour
     private void CreateTextureAndPassToPlugin()
 	{
 		// Create a texture
-        //rt = new RenderTexture(1280, 720, 24);
-        // rt = new RenderTexture(1280, 720, 0, RenderTextureFormat.ARGB32);
-        // rt.filterMode = FilterMode.Point;
+        // rt = new RenderTexture(1280, 720, 24, RenderTextureFormat.ARGB32);
         // rt.Create();
 
-        // cameraObject.targetTexture = rt;
-        // cameraObject.Render();
+        cameraObject.targetTexture = new RenderTexture(1280, 720, 24, RenderTextureFormat.ARGB32);
+        cameraObject.Render();
 
-		Texture2D tex = new Texture2D(256,256,TextureFormat.ARGB32,false);
+		Texture2D tex = new Texture2D(1280, 720, TextureFormat.ARGB32, false);
 		// Set point filtering just so we can see the pixels clearly
 		tex.filterMode = FilterMode.Point;
 		// Call Apply() so it's actually uploaded to the GPU
 		tex.Apply();
+
+        // Copy
+        // GPU to GPU
+        Graphics.CopyTexture(cameraObject.activeTexture, tex);
 
 		// // Set texture onto our material
 		// GetComponent<Renderer>().material.mainTexture = tex;
@@ -88,7 +87,7 @@ public class DirectX11 : MonoBehaviour
             yield return new WaitForSeconds(5);
 			yield return new WaitForEndOfFrame();
 
-            //cameraObject.Render();
+            cameraObject.Render();
 
 			// Issue a plugin event with arbitrary integer identifier.
 			// The plugin can distinguish between different

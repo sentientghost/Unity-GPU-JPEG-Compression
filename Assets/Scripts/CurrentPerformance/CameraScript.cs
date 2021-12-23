@@ -233,7 +233,7 @@ public class CameraScript : MonoBehaviour
 
         // Destroy previous targetTexture and initialize new render texture based on calculated width and height
         UnityEngine.Object.Destroy(cameraObject.targetTexture);
-        cameraObject.targetTexture = new RenderTexture(imageWH[0], imageWH[1], 24);
+        cameraObject.targetTexture = new RenderTexture(imageWH[0], imageWH[1], 24, RenderTextureFormat.ARGB32);
 
         // return int[] with width and height
         return imageWH;

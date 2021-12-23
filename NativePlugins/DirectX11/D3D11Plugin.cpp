@@ -237,15 +237,18 @@ static void SaveImage()
     std::string err;
     HRESULT hr = S_OK;
 
-    /*ComPtr<ID3D11Texture2D> backBuffer;
-    hr = swapChain->GetBuffer(0, __uuidof(ID3D11Texture2D), reinterpret_cast<LPVOID*>(backBuffer.GetAddressOf()));
-    if (SUCCEEDED(hr))
-    {
-        hr = SaveWICTextureToFile(globals::context, backBuffer.Get(), GUID_ContainerFormatJpeg, L"F:/screenshots/SCREENSHOT.JPG");
-    }
-    DX::ThrowIfFailed(hr);*/
+    hr = SaveWICTextureToFile(globals::context, g_TextureHandle, GUID_ContainerFormatJpeg, L"F:/screenshots/SCREENSHOT.JPG", nullptr, 
+        [&](IPropertyBag2* props) 
+        {
+            PROPBAG2 option[1] = {0};
+            option[0].pstrName = const_cast<wchar_t*>(L"ImageQuality");
 
-    hr = SaveWICTextureToFile(globals::context, g_TextureHandle, GUID_ContainerFormatJpeg, L"F:/screenshots/SCREENSHOT.JPG");
+            VARIANT varValue[1];
+            varValue[0].vt = VT_R4;
+            varValue[0].fltVal = float(0.4);
+
+            (void)props->Write(1, option, varValue);
+        }, false);
     
 
     //-----------------------------------------
@@ -260,75 +263,75 @@ static void SaveImage()
     else
     {
         Debug("Capture Texture Succeeded");
-    }*/
+    }
 
     // Determine source format's WIC equivalent
-    //WICPixelFormatGUID pfGuid = {};
-    //bool sRGB = false;
+    WICPixelFormatGUID pfGuid = {};
+    bool sRGB = false;
 
-    //ComPtr<ID3D11Texture2D> pTexture;
-    //hr = g_TextureHandle->QueryInterface(IID_GRAPHICS_PPV_ARGS(pTexture.GetAddressOf()));
-    //if (FAILED(hr))
-    //    Debug("Query Inteface Failed");
-    //else
-    //    Debug("Query Interface Succeeded");
+    ComPtr<ID3D11Texture2D> pTexture;
+    hr = g_TextureHandle->QueryInterface(IID_GRAPHICS_PPV_ARGS(pTexture.GetAddressOf()));
+    if (FAILED(hr))
+        Debug("Query Inteface Failed");
+    else
+        Debug("Query Interface Succeeded");
 
-    //assert(pTexture);
+    assert(pTexture);
 
-    //pTexture->GetDesc(&desc);
+    pTexture->GetDesc(&desc);
 
-    //if (desc.ArraySize > 1 || desc.MipLevels > 1)
-    //{
-    //    Debug("WARNING: ScreenGrab does not support 2D arrays, cubemaps, or mipmaps; only the first surface is written. Consider using DirectXTex instead.\n");
-    //}
+    if (desc.ArraySize > 1 || desc.MipLevels > 1)
+    {
+        Debug("WARNING: ScreenGrab does not support 2D arrays, cubemaps, or mipmaps; only the first surface is written. Consider using DirectXTex instead.\n");
+    }
 
-    //switch (desc.Format)
-    //{
-    //case DXGI_FORMAT_R32G32B32A32_FLOAT:            pfGuid = GUID_WICPixelFormat128bppRGBAFloat; break;
-    //case DXGI_FORMAT_R16G16B16A16_FLOAT:            pfGuid = GUID_WICPixelFormat64bppRGBAHalf; break;
-    //case DXGI_FORMAT_R16G16B16A16_UNORM:            pfGuid = GUID_WICPixelFormat64bppRGBA; break;
-    //case DXGI_FORMAT_R10G10B10_XR_BIAS_A2_UNORM:    pfGuid = GUID_WICPixelFormat32bppRGBA1010102XR; break; // DXGI 1.1
-    //case DXGI_FORMAT_R10G10B10A2_UNORM:             pfGuid = GUID_WICPixelFormat32bppRGBA1010102; break;
-    //case DXGI_FORMAT_B5G5R5A1_UNORM:                pfGuid = GUID_WICPixelFormat16bppBGRA5551; break;
-    //case DXGI_FORMAT_B5G6R5_UNORM:                  pfGuid = GUID_WICPixelFormat16bppBGR565; break;
-    //case DXGI_FORMAT_R32_FLOAT:                     pfGuid = GUID_WICPixelFormat32bppGrayFloat; break;
-    //case DXGI_FORMAT_R16_FLOAT:                     pfGuid = GUID_WICPixelFormat16bppGrayHalf; break;
-    //case DXGI_FORMAT_R16_UNORM:                     pfGuid = GUID_WICPixelFormat16bppGray; break;
-    //case DXGI_FORMAT_R8_UNORM:                      pfGuid = GUID_WICPixelFormat8bppGray; break;
-    //case DXGI_FORMAT_A8_UNORM:                      pfGuid = GUID_WICPixelFormat8bppAlpha; break;
+    switch (desc.Format)
+    {
+    case DXGI_FORMAT_R32G32B32A32_FLOAT:            pfGuid = GUID_WICPixelFormat128bppRGBAFloat; break;
+    case DXGI_FORMAT_R16G16B16A16_FLOAT:            pfGuid = GUID_WICPixelFormat64bppRGBAHalf; break;
+    case DXGI_FORMAT_R16G16B16A16_UNORM:            pfGuid = GUID_WICPixelFormat64bppRGBA; break;
+    case DXGI_FORMAT_R10G10B10_XR_BIAS_A2_UNORM:    pfGuid = GUID_WICPixelFormat32bppRGBA1010102XR; break; // DXGI 1.1
+    case DXGI_FORMAT_R10G10B10A2_UNORM:             pfGuid = GUID_WICPixelFormat32bppRGBA1010102; break;
+    case DXGI_FORMAT_B5G5R5A1_UNORM:                pfGuid = GUID_WICPixelFormat16bppBGRA5551; break;
+    case DXGI_FORMAT_B5G6R5_UNORM:                  pfGuid = GUID_WICPixelFormat16bppBGR565; break;
+    case DXGI_FORMAT_R32_FLOAT:                     pfGuid = GUID_WICPixelFormat32bppGrayFloat; break;
+    case DXGI_FORMAT_R16_FLOAT:                     pfGuid = GUID_WICPixelFormat16bppGrayHalf; break;
+    case DXGI_FORMAT_R16_UNORM:                     pfGuid = GUID_WICPixelFormat16bppGray; break;
+    case DXGI_FORMAT_R8_UNORM:                      pfGuid = GUID_WICPixelFormat8bppGray; break;
+    case DXGI_FORMAT_A8_UNORM:                      pfGuid = GUID_WICPixelFormat8bppAlpha; break;
 
-    //case DXGI_FORMAT_R8G8B8A8_UNORM:
-    //    pfGuid = GUID_WICPixelFormat32bppRGBA;
-    //    break;
+    case DXGI_FORMAT_R8G8B8A8_UNORM:
+        pfGuid = GUID_WICPixelFormat32bppRGBA;
+        break;
 
-    //case DXGI_FORMAT_R8G8B8A8_UNORM_SRGB:
-    //    pfGuid = GUID_WICPixelFormat32bppRGBA;
-    //    sRGB = true;
-    //    break;
+    case DXGI_FORMAT_R8G8B8A8_UNORM_SRGB:
+        pfGuid = GUID_WICPixelFormat32bppRGBA;
+        sRGB = true;
+        break;
 
-    //case DXGI_FORMAT_B8G8R8A8_UNORM: // DXGI 1.1
-    //    pfGuid = GUID_WICPixelFormat32bppBGRA;
-    //    break;
+    case DXGI_FORMAT_B8G8R8A8_UNORM: // DXGI 1.1
+        pfGuid = GUID_WICPixelFormat32bppBGRA;
+        break;
 
-    //case DXGI_FORMAT_B8G8R8A8_UNORM_SRGB: // DXGI 1.1
-    //    pfGuid = GUID_WICPixelFormat32bppBGRA;
-    //    sRGB = true;
-    //    break;
+    case DXGI_FORMAT_B8G8R8A8_UNORM_SRGB: // DXGI 1.1
+        pfGuid = GUID_WICPixelFormat32bppBGRA;
+        sRGB = true;
+        break;
 
-    //case DXGI_FORMAT_B8G8R8X8_UNORM: // DXGI 1.1
-    //    pfGuid = GUID_WICPixelFormat32bppBGR;
-    //    break;
+    case DXGI_FORMAT_B8G8R8X8_UNORM: // DXGI 1.1
+        pfGuid = GUID_WICPixelFormat32bppBGR;
+        break;
 
-    //case DXGI_FORMAT_B8G8R8X8_UNORM_SRGB: // DXGI 1.1
-    //    pfGuid = GUID_WICPixelFormat32bppBGR;
-    //    sRGB = true;
-    //    break;
+    case DXGI_FORMAT_B8G8R8X8_UNORM_SRGB: // DXGI 1.1
+        pfGuid = GUID_WICPixelFormat32bppBGR;
+        sRGB = true;
+        break;
 
-    //default:
-    //    std::string msg = "ERROR: ScreenGrab does not support all DXGI formats (" + std::to_string(static_cast<uint32_t>(desc.Format)) + "). Consider using DirectXTex.";
-    //    Debug(msg.c_str());
-    //    hr = HRESULT_FROM_WIN32(ERROR_NOT_SUPPORTED);
-    //}
+    default:
+        std::string msg = "ERROR: ScreenGrab does not support all DXGI formats (" + std::to_string(static_cast<uint32_t>(desc.Format)) + "). Consider using DirectXTex.";
+        Debug(msg.c_str());
+        hr = HRESULT_FROM_WIN32(ERROR_NOT_SUPPORTED);
+    }*/
     //-----------------------------------------
 
 
