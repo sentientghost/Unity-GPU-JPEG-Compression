@@ -9,9 +9,6 @@
 #include "../DirectXTK/Src/LoaderHelpers.h"
 #include "../DirectXTK/Src/PlatformHelpers.h"
 
-//#include "../DirectXTK/Src/DDS.h"
-//#include <DDSTextureLoader.h>
-
 
 // Added requried namespaces
 using Microsoft::WRL::ComPtr;
