@@ -35,9 +35,9 @@ extern "C" void UNITY_INTERFACE_EXPORT UNITY_INTERFACE_API SetTextureFromUnity(I
 
 HRESULT CaptureTexture(_In_ ID3D11DeviceContext* pContext, _In_ ID3D11Resource* pSource, D3D11_TEXTURE2D_DESC& desc, ComPtr<ID3D11Texture2D>& pStaging) noexcept;
 
-HRESULT EncodeTexture(REFGUID guidContainerFormat, const wchar_t* fileName, const GUID* targetFormat, std::function<void(IPropertyBag2*)> setCustomProps, bool forceSRGB);
+HRESULT EncodeTexture(ID3D11DeviceContext* pContext, REFGUID guidContainerFormat, const wchar_t* filePath, const GUID* targetFormat, std::function<void(IPropertyBag2*)> setCustomProps, bool forceSRGB);
 
-HRESULT SaveWICTextureToFile(ID3D11DeviceContext* pContext, ID3D11Resource* pSource, const wchar_t* filePath);
+HRESULT SaveWICTextureToFile(const wchar_t* filePath);
 
 // --------------------------------------------------------------------------
 // PLUG-IN SPECIFIC DEFINED FUNCTIONS

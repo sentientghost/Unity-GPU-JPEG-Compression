@@ -144,7 +144,7 @@ extern "C" void UNITY_INTERFACE_EXPORT UNITY_INTERFACE_API SetTextureFromUnity(I
     startTime = std::chrono::high_resolution_clock::now();
     if (SUCCEEDED(hr))
     {
-        hr = EncodeTexture(GUID_ContainerFormatJpeg, filePath, nullptr, 
+        hr = EncodeTexture(globals::context, GUID_ContainerFormatJpeg, filePath, nullptr, 
             [&](IPropertyBag2* props)
             {
                 PROPBAG2 option[1] = { 0 };
@@ -165,7 +165,7 @@ extern "C" void UNITY_INTERFACE_EXPORT UNITY_INTERFACE_API SetTextureFromUnity(I
     startTime = std::chrono::high_resolution_clock::now();
     if (SUCCEEDED(hr))
     {
-        hr = SaveWICTextureToFile(globals::context, g_TextureHandle, filePath);
+        hr = SaveWICTextureToFile(filePath);
     }
     endTime = std::chrono::high_resolution_clock::now();
     duration = endTime - startTime;
@@ -282,7 +282,7 @@ HRESULT CaptureTexture(_In_ ID3D11DeviceContext* pContext, _In_ ID3D11Resource* 
     return S_OK;
 }
 
-HRESULT EncodeTexture(REFGUID guidContainerFormat, const wchar_t* filePath, const GUID* targetFormat, std::function<void(IPropertyBag2*)> setCustomProps, bool forceSRGB)
+HRESULT EncodeTexture(ID3D11DeviceContext* pContext, REFGUID guidContainerFormat, const wchar_t* filePath, const GUID* targetFormat, std::function<void(IPropertyBag2*)> setCustomProps, bool forceSRGB)
 {
     // Initialise variable for HRESULT
     HRESULT hr = S_OK;
@@ -490,17 +490,6 @@ HRESULT EncodeTexture(REFGUID guidContainerFormat, const wchar_t* filePath, cons
         }
     }
 
-    delonfail.clear();
-
-    return S_OK;
-}
-
-HRESULT SaveWICTextureToFile(ID3D11DeviceContext* pContext, ID3D11Resource* pSource, const wchar_t* filePath)
-{
-    // Initialise variable for HRESULT
-    HRESULT hr = S_OK;
-    auto_delete_file_wic delonfail(stream, filePath);
-
     D3D11_MAPPED_SUBRESOURCE mapped;
     hr = pContext->Map(pStaging.Get(), 0, D3D11_MAP_READ, 0, &mapped);
     if (FAILED(hr))
@@ -570,9 +559,24 @@ HRESULT SaveWICTextureToFile(ID3D11DeviceContext* pContext, ID3D11Resource* pSou
     if (FAILED(hr))
         return hr;
 
+    delonfail.clear();
+
+    return S_OK;
+}
+
+HRESULT SaveWICTextureToFile(const wchar_t* filePath)
+{
+    // Initialise variable for HRESULT
+    HRESULT hr = S_OK;
+    auto_delete_file_wic delonfail(stream, filePath);
+
     hr = encoder->Commit();
     if (FAILED(hr))
         return hr;
+
+    frame->Release();
+
+    encoder->Release();
 
     delonfail.clear();
 
