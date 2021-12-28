@@ -7,7 +7,7 @@ using UnityEngine.SceneManagement;
 using UnityEngine.Rendering;
 
 
-public class DirectX11Script : MonoBehaviour
+public class DirectX11PluginScript : MonoBehaviour
 {
     // Import DLL Functions
     // Access C++ function from C# script

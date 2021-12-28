@@ -40,7 +40,7 @@ public class NativePluginsScript : MonoBehaviour
     GameObject ballObject;
 
     // Script References
-    DirectX11Script directX11Script;
+    DirectX11PluginScript directX11Script;
 
     // Scene metrics such that:
     // 1st bracket is graphics APIs (DirectX 11)
@@ -82,7 +82,7 @@ public class NativePluginsScript : MonoBehaviour
         }
 
         // Initialize DirectX11 Scripts
-        directX11Script = gameObject.GetComponent<DirectX11Script> ();
+        directX11Script = gameObject.GetComponent<DirectX11PluginScript> ();
 
         // Initialize ball reference for the scene
         string objectName = SceneManager.GetActiveScene().name + "SceneBall";
