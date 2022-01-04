@@ -1,0 +1,6 @@
+﻿  pch.cpp
+  CUDAPlugin.cpp
+  dllmain.cpp
+  Generating Code...
+     Creating library F:\Github\Repositories\Unity-On-GPU-JPEG-Compression\NativePlugins\x64\Debug\CUDA.lib and object F:\Github\Repositories\Unity-On-GPU-JPEG-Compression\NativePlugins\x64\Debug\CUDA.exp
+  CUDA.vcxproj -> F:\Github\Repositories\Unity-On-GPU-JPEG-Compression\NativePlugins\x64\Debug\CUDA.dll
