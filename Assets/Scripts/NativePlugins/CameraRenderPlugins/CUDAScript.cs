@@ -1,4 +1,5 @@
 using System;
+using System.Text;
 using System.Collections;
 using System.Collections.Generic;
 using System.Runtime.InteropServices;
@@ -17,13 +18,17 @@ public class CUDAScript : MonoBehaviour
     public static extern void SetDebugFunction(IntPtr fp);
 
     [DllImport("CUDA")]
-    private static extern void SetTextureFromUnity(System.IntPtr texture, int imageWidth, int imageHeight);
+    private static extern int SetTextureFromUnity(System.IntPtr texture, int imageWidth, int imageHeight);
     
     [DllImport("CUDA")]
     private static extern IntPtr GetRenderEventFunc();
 
+    [DllImport("CUDA")]
+    private static extern void GetErrorString(int error);
+
     // Global variables
     private Coroutine imageCoroutine;
+    int error;
 
 
     /**** MONOBEHAVIOUR EVENT FUNCTIONS ****/
@@ -55,7 +60,11 @@ public class CUDAScript : MonoBehaviour
 		// GetComponent<Renderer>().material.mainTexture = tex;
 
 		// Pass texture pointer to the plugin
-		SetTextureFromUnity (tex.GetNativeTexturePtr(), tex.width, tex.height);
+		error = SetTextureFromUnity(tex.GetNativeTexturePtr(), tex.width, tex.height);
+        //GL.IssuePluginEvent(GetRenderEventFunc(), 1);
+
+        // GetErrorString(error);
+        // Debug.Log("CUDA Error: " + error + " (" + desc.ToString() + ")");
 	}
 
     private IEnumerator CallPluginAtEndOfFrames()

@@ -7,14 +7,18 @@ static IUnityInterfaces* s_UnityInterfaces = NULL;
 static IUnityGraphics* s_Graphics = NULL;
 static UnityGfxRenderer s_RendererType = kUnityGfxRendererNull;
 
+// CUDA global variables
+cudaGraphicsResource_t resource = NULL;
+
 // Texture global variables
-static void* g_TextureHandle = NULL;
+static GLuint g_TextureHandle = NULL;
 static int g_TextureWidth = 0;
 static int g_TextureHeight = 0;
 
 // Debug global variables
 typedef void (*FuncPtr)(const char*);
 FuncPtr Debug;
+cudaError_t err;
 
 
 // --------------------------------------------------------------------------
@@ -73,14 +77,17 @@ static void UNITY_INTERFACE_API OnGraphicsDeviceEvent(UnityGfxDeviceEventType ev
 // --------------------------------------------------------------------------
 // EXPORTED FUNCTIONS TO C# SCRIPT 
 
-extern "C" void UNITY_INTERFACE_EXPORT UNITY_INTERFACE_API SetTextureFromUnity(void* textureHandle, int imageWidth, int imageHeight)
+extern "C" cudaError_t UNITY_INTERFACE_EXPORT UNITY_INTERFACE_API SetTextureFromUnity(void* textureHandle, int imageWidth, int imageHeight)
 {
     // A script calls this at initialization time; just remember the texture pointer here.
     // Will update texture pixels each frame from the plugin rendering event (texture update
     // needs to happen on the rendering thread).
-    g_TextureHandle = textureHandle;
+    g_TextureHandle = (GLuint)textureHandle;
     g_TextureWidth = imageWidth;
     g_TextureHeight = imageHeight;
+
+    //cudaError_t err = cudaSuccess;
+    return err;
 }
 
 // Function used for Debugging
@@ -91,7 +98,9 @@ extern "C" void UNITY_INTERFACE_EXPORT SetDebugFunction(FuncPtr fp)
 
 static void UNITY_INTERFACE_API OnRenderEvent(int eventID)
 {
-    Debug("Success");
+    //Debug("Success");
+    err = cudaGraphicsGLRegisterImage(&resource, g_TextureHandle, GL_TEXTURE_2D, cudaGraphicsRegisterFlagsNone);
+    Debug(cudaGetErrorString(err));
 }
 
 
@@ -101,4 +110,8 @@ static void UNITY_INTERFACE_API OnRenderEvent(int eventID)
 extern "C" UnityRenderingEvent UNITY_INTERFACE_EXPORT UNITY_INTERFACE_API GetRenderEventFunc()
 {
     return OnRenderEvent;
+}
+
+extern "C" UNITY_INTERFACE_EXPORT void UNITY_INTERFACE_API GetErrorString(cudaError_t error) {
+    Debug(cudaGetErrorString(error));
 }

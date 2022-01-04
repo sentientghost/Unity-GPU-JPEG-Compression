@@ -1,6 +1,4 @@
-﻿  pch.cpp
-  CUDAPlugin.cpp
-  dllmain.cpp
-  Generating Code...
-     Creating library F:\Github\Repositories\Unity-On-GPU-JPEG-Compression\NativePlugins\x64\Debug\CUDA.lib and object F:\Github\Repositories\Unity-On-GPU-JPEG-Compression\NativePlugins\x64\Debug\CUDA.exp
+﻿  CUDAPlugin.cpp
+F:\Github\Repositories\Unity-On-GPU-JPEG-Compression\NativePlugins\CUDA\CUDAPlugin.cpp(85,44): warning C4311: 'type cast': pointer truncation from 'void *' to 'GLuint'
+F:\Github\Repositories\Unity-On-GPU-JPEG-Compression\NativePlugins\CUDA\CUDAPlugin.cpp(85,44): warning C4302: 'type cast': truncation from 'void *' to 'GLuint'
   CUDA.vcxproj -> F:\Github\Repositories\Unity-On-GPU-JPEG-Compression\NativePlugins\x64\Debug\CUDA.dll
