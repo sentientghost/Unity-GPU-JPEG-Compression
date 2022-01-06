@@ -1,6 +1,6 @@
 ﻿  CUDA_OpenGL_Plugin.cpp
   Note: including lib: glut32.lib
-F:\Github\Repositories\Unity-On-GPU-JPEG-Compression\NativePlugins\CUDA_OpenGL_Interop\CUDA_OpenGL_Plugin.cpp(127,44): warning C4311: 'type cast': pointer truncation from 'void *' to 'GLuint'
-F:\Github\Repositories\Unity-On-GPU-JPEG-Compression\NativePlugins\CUDA_OpenGL_Interop\CUDA_OpenGL_Plugin.cpp(127,44): warning C4302: 'type cast': truncation from 'void *' to 'GLuint'
+F:\Github\Repositories\Unity-On-GPU-JPEG-Compression\NativePlugins\CUDA_OpenGL_Interop\CUDA_OpenGL_Plugin.cpp(113,44): warning C4311: 'type cast': pointer truncation from 'void *' to 'GLuint'
+F:\Github\Repositories\Unity-On-GPU-JPEG-Compression\NativePlugins\CUDA_OpenGL_Interop\CUDA_OpenGL_Plugin.cpp(113,44): warning C4302: 'type cast': truncation from 'void *' to 'GLuint'
      Creating library F:\Github\Repositories\Unity-On-GPU-JPEG-Compression\NativePlugins\x64\Debug\CUDA_OpenGL_Interop.lib and object F:\Github\Repositories\Unity-On-GPU-JPEG-Compression\NativePlugins\x64\Debug\CUDA_OpenGL_Interop.exp
   CUDA_OpenGL_Interop.vcxproj -> F:\Github\Repositories\Unity-On-GPU-JPEG-Compression\NativePlugins\x64\Debug\CUDA_OpenGL_Interop.dll

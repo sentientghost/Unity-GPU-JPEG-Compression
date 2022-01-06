@@ -41,9 +41,11 @@ public class NativePluginsScript : MonoBehaviour
 
     // Script References
     DirectX11Script directX11Script;
+    CUDAOpenGLScript cudaOpenGLScript;
+    GraphicsDeviceType graphicsAPI;
 
     // Scene metrics such that:
-    // 1st bracket is graphics APIs (DirectX 11)
+    // 1st bracket is graphics APIs (DirectX 11 OR OpenGL Core)
     // 2nd bracket is resolutions (144, 240, 360, 480, 720, 1080, 1440)
     // 3rd bracket is jpeg qualities (75, 80, 85, 90, 95, 100)
     // 4th bracket is performance metrics (render, copy, encode, write)
@@ -81,8 +83,22 @@ public class NativePluginsScript : MonoBehaviour
             buildMode = "Windowed";
         }
 
-        // Initialize DirectX11 Scripts
-        directX11Script = gameObject.GetComponent<DirectX11Script> ();
+        graphicsAPI = SystemInfo.graphicsDeviceType;
+
+        if (graphicsAPI == GraphicsDeviceType.Direct3D11)
+        {
+            // Initialize DirectX11 Scripts
+            directX11Script = gameObject.GetComponent<DirectX11Script> ();
+        }
+        else if (graphicsAPI == GraphicsDeviceType.OpenGLCore)
+        {
+            // Initialize CUDA OpenGL Scripts
+            cudaOpenGLScript = gameObject.GetComponent<CUDAOpenGLScript> ();
+        }
+        else
+        {
+            Debug.Log("Error: Incompatible Graphics API");
+        }
 
         // Initialize ball reference for the scene
         string objectName = SceneManager.GetActiveScene().name + "SceneBall";
@@ -239,7 +255,7 @@ public class NativePluginsScript : MonoBehaviour
     // Function to increment between different test cases using various counts
     void IncrementCounts()
     {
-        // ONLY 1 GRAPHICS API CURRENTLY IMPLEMENTED
+        // ONLY 1 GRAPHICS API CAN BE TESTED AT A TIME
         // Check if test case is complete based on count values
         if (apiCount == 0 && resolutionCount == 6 && qualityCount == 5)
         {
@@ -275,8 +291,11 @@ public class NativePluginsScript : MonoBehaviour
         // Check which script to run based on the code count
         if (apiCount == 0)
         {
-            // Take image using the linear script and save the image times
-            imageTimes = directX11Script.CallTakeImage(imageWH[0], imageWH[1], cameraObject, qualities[qualityCount], frameCount);
+            // Take image using the appropriate script for the graphics API and save the image times
+            if (graphicsAPI == GraphicsDeviceType.Direct3D11)
+                imageTimes = directX11Script.CallTakeImage(imageWH[0], imageWH[1], cameraObject, qualities[qualityCount], frameCount);
+            else if (graphicsAPI == GraphicsDeviceType.OpenGLCore)
+                imageTimes = cudaOpenGLScript.CallTakeImage(imageWH[0], imageWH[1], cameraObject, qualities[qualityCount], frameCount);
         }
 
         // Check if the scipts ran successfully based on the image times 
@@ -305,7 +324,12 @@ public class NativePluginsScript : MonoBehaviour
         StringBuilder csvData = new StringBuilder();
 
         // Initialize column heading options
-        string[] graphicsAPI = new string[1] {"d3d11"};
+        string[] graphicsAPIstr = new string[1] {"null"};
+        if (graphicsAPI == GraphicsDeviceType.Direct3D11)
+            graphicsAPIstr[0] = "d3d11";
+        else if (graphicsAPI == GraphicsDeviceType.OpenGLCore)
+            graphicsAPIstr[0] = "cudaGL";
+        
         string[] imageResolution = new string[7] {"144p", "240p", "360p", "480p", "720p", "1080p", "1440p"};
         string[] qualityLevel = new string[6] {"75", "80", "85", "90", "95", "100"};
         string[] metric = new string[4] {"render", "copy", "encode", "write"};
@@ -329,7 +353,7 @@ public class NativePluginsScript : MonoBehaviour
                             if (i == -1)
                             {
                                 // Add column headings to csv file
-                                string columnHeading = graphicsAPI[j] + "_" + imageResolution[k] + "_" + qualityLevel[l] + "_" + metric[m] + ",";
+                                string columnHeading = graphicsAPIstr[j] + "_" + imageResolution[k] + "_" + qualityLevel[l] + "_" + metric[m] + ",";
                                 csvData.Append(columnHeading);
                             }
                             else
@@ -352,17 +376,39 @@ public class NativePluginsScript : MonoBehaviour
     // Function to determine the correct filepath based on build mode and scene type 
     string FilePath()
     {
-        // Check the build mode of Unity
-        if (buildMode == "Editor")
+        if (graphicsAPI == GraphicsDeviceType.Direct3D11)
         {
-            // Return filepath for editor mode 
-            return string.Format("{0}/../Metrics/Native Plugins/{1}-Mode_{2}-Scene.csv", Application.dataPath, buildMode, SceneManager.GetActiveScene().name);
+            // Check the build mode of Unity
+            if (buildMode == "Editor")
+            {
+                // Return filepath for editor mode DirectX 11 graphics API
+                return string.Format("{0}/../Metrics/Native Plugins/DirectX 11/{1}-Mode_{2}-Scene.csv", Application.dataPath, buildMode, SceneManager.GetActiveScene().name);
+            }
+            else
+            {
+                // Return filepath for windowed and batch mode DirectX 11 graphics API
+                return string.Format("{0}/../../../Metrics/Native Plugins/DirectX 11/{1}-Mode_{2}-Scene.csv", Application.dataPath, buildMode, SceneManager.GetActiveScene().name);
+            }  
+        }
+        else if (graphicsAPI == GraphicsDeviceType.OpenGLCore)
+        {
+            // Check the build mode of Unity
+            if (buildMode == "Editor")
+            {
+                // Return filepath for editor mode OpenGL Core graphics API
+                return string.Format("{0}/../Metrics/Native Plugins/CUDA OpenGL Interop/{1}-Mode_{2}-Scene.csv", Application.dataPath, buildMode, SceneManager.GetActiveScene().name);
+            }
+            else
+            {
+                // Return filepath for windowed and batch mode OpenGL Core graphics API
+                return string.Format("{0}/../../../Metrics/Native Plugins/CUDA OpenGL Interop/{1}-Mode_{2}-Scene.csv", Application.dataPath, buildMode, SceneManager.GetActiveScene().name);
+            } 
         }
         else
         {
-            // Return filepath for windowed and batch mode
-            return string.Format("{0}/../../../Metrics/Native Plugins/{1}-Mode_{2}-Scene.csv", Application.dataPath, buildMode, SceneManager.GetActiveScene().name);
-        }    
+            Debug.Log("Error: FilePath not determine, Incompatible Graphics API, Defaulting to Editor Mode FilePath");
+            return string.Format("{0}/../Metrics/Native Plugins/{1}-Mode_{2}-Scene.csv", Application.dataPath, buildMode, SceneManager.GetActiveScene().name);
+        }
     }
 
     // Function to save the scene metrics as a csv file

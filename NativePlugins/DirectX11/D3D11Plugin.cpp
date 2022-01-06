@@ -27,7 +27,7 @@ static UnityGfxRenderer s_RendererType = kUnityGfxRendererNull;
 
 // Texture global variables
 static ID3D11Resource* g_TextureHandle = NULL;
-static float g_TextureQuality = 0;
+static float g_TextureQuality = 75;
 IWICImagingFactory* pWIC;
 
 D3D11_TEXTURE2D_DESC desc = {};

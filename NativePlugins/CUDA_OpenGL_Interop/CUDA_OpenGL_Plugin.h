@@ -27,9 +27,7 @@ static void UNITY_INTERFACE_API OnGraphicsDeviceEvent(UnityGfxDeviceEventType ev
 // --------------------------------------------------------------------------
 // EXPORTED FUNCTIONS TO C# SCRIPT 
 
-extern "C" void UNITY_INTERFACE_EXPORT UNITY_INTERFACE_API FillNativeTimes(float* data, int count);
-
-extern "C" void UNITY_INTERFACE_EXPORT UNITY_INTERFACE_API SetTextureFromUnity(void* textureHandle, int imageWidth, int imageHeight);
+extern "C" void UNITY_INTERFACE_EXPORT UNITY_INTERFACE_API SetTextureFromUnity(void* textureHandle, int imageWidth, int imageHeight, int cameraQuality, char* path);
 
 extern "C" UnityRenderingEvent UNITY_INTERFACE_EXPORT UNITY_INTERFACE_API GetRenderEventFunc();
 

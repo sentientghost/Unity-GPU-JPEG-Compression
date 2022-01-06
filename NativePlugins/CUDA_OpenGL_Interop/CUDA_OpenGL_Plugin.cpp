@@ -8,47 +8,39 @@ static IUnityGraphics* s_Graphics = NULL;
 static UnityGfxRenderer s_RendererType = kUnityGfxRendererNull;
 
 // CUDA global variables
-cudaGraphicsResource_t m_cudaGraphicsResource = NULL; /** Interop resource handle**/
-cudaArray* m_cudaArray; /** CUDA array that the texture is mapped to **/
-cudaTextureObject_t m_texture; /** reference to exture to read data through*/
+cudaDeviceProp cuda_props;
+unsigned char* cuda_img_buffer = nullptr;
+size_t cuda_img_buffer_size;
+
+// nvJPEG global variables
+nvjpegHandle_t nv_handle;
+nvjpegEncoderState_t nv_enc_state;
+nvjpegEncoderParams_t nv_enc_params;
+nvjpegImage_t nv_image;
+size_t nv_stream_size;
+
+// OpenGL global variables
+unsigned char* gl_tex_image = nullptr;
 
 // Texture global variables
 static GLuint g_TextureHandle = NULL;
 static int g_TextureWidth = 0;
 static int g_TextureHeight = 0;
+static float g_TextureQuality = 75;
 
 // Debug global variables
 typedef void (*FuncPtr)(const char*);
 FuncPtr Debug;
-cudaError_t err;
 
-struct encode_params_t {
-    std::string input_dir;
-    std::string output_dir;
-    std::string format;
-    std::string subsampling;
-    int quality;
-    int huf;
-    int dev;
-};
-
-nvjpegHandle_t nv_handle;
-nvjpegEncoderState_t nv_enc_state;
-nvjpegEncoderParams_t nv_enc_params;
-nvjpegJpegState_t jpeg_state;
-cudaStream_t stream;
-
-unsigned char* pixels = (unsigned char*)malloc(sizeof(unsigned char) * 256 * 256 * 3);
-unsigned char* img_buffer = nullptr;
-size_t img_buffer_size = 256 * 256 * 4;
-std::vector<unsigned char> jpeg;
-cudaDeviceProp props;
-nvjpegImage_t nv_image;
-size_t length;
+// Native Times global variables
+typedef void (*FuncPtr)(const char*);
+FuncPtr SendNativeTimes;
 
 // General global variables
+std::vector<unsigned char> jpeg_data;
 std::string dataPath = "";
 float nativeTimes[3] = { 0, 0, 0 };
+
 
 
 // --------------------------------------------------------------------------
@@ -109,25 +101,26 @@ extern "C" void UNITY_INTERFACE_EXPORT SetDebugFunction(FuncPtr fp)
     Debug = fp;
 }
 
-// Function to return time metrics to C# script
-extern "C" void UNITY_INTERFACE_EXPORT UNITY_INTERFACE_API FillNativeTimes(float* data, int count)
+// Function used to send the native times metircs to C# script
+extern "C" void UNITY_INTERFACE_EXPORT UNITY_INTERFACE_API SetNativeTimes(FuncPtr fp)
 {
-    for (int i = 0; i < count; i++)
-    {
-        data[i] = nativeTimes[i];
-    }
+    SendNativeTimes = fp;
 }
 
 // Gets Unity Texture2D resource
-extern "C" void UNITY_INTERFACE_EXPORT UNITY_INTERFACE_API SetTextureFromUnity(void* textureHandle, int imageWidth, int imageHeight)
+extern "C" void UNITY_INTERFACE_EXPORT UNITY_INTERFACE_API SetTextureFromUnity(void* textureHandle, int imageWidth, int imageHeight, int cameraQuality, char* path)
 {
-    // A script calls this at initialization time; just remember the texture pointer here.
-    // Will update texture pixels each frame from the plugin rendering event (texture update
-    // needs to happen on the rendering thread).
     g_TextureHandle = (GLuint)textureHandle;
     g_TextureWidth = imageWidth;
     g_TextureHeight = imageHeight;
+    g_TextureQuality = cameraQuality;
+    dataPath = path;
 
+    // Set OpenGL texture image size where 3 is the number of channels (RGB)
+    gl_tex_image = (unsigned char*)malloc(sizeof(unsigned char) * g_TextureWidth * g_TextureHeight * 3);
+
+    // Set CUDA image buffer size 
+    cuda_img_buffer_size = g_TextureWidth * g_TextureHeight * NVJPEG_MAX_COMPONENT;
 }
 
 // Get a rendering event callback function
@@ -149,11 +142,11 @@ bool CopyImage()
     // OpenGL bind texture and adapt the alignment requirements for the start of each pixel row
     glBindTexture(GL_TEXTURE_2D, g_TextureHandle);
     glPixelStorei(GL_PACK_ALIGNMENT, 1);
-    glGetTexImage(GL_TEXTURE_2D, 0, GL_RGB, GL_UNSIGNED_BYTE, pixels);
+    glGetTexImage(GL_TEXTURE_2D, 0, GL_RGB, GL_UNSIGNED_BYTE, gl_tex_image);
 
     // Initialise CUDA device properties
     if (!errFlag)
-        errFlag = CheckErrors(cudaGetDeviceProperties(&props, 0));
+        errFlag = CheckErrors(cudaGetDeviceProperties(&cuda_props, 0));
 
     // Initialise nvJPEG structures
     if (!errFlag)
@@ -167,7 +160,7 @@ bool CopyImage()
 
     // Set parameters
     if (!errFlag)
-        errFlag = CheckErrors(nvjpegEncoderParamsSetQuality(nv_enc_params, 75, nullptr));
+        errFlag = CheckErrors(nvjpegEncoderParamsSetQuality(nv_enc_params, g_TextureQuality, nullptr));
 
     if (!errFlag)
         errFlag = CheckErrors(nvjpegEncoderParamsSetOptimizedHuffman(nv_enc_params, 0, nullptr));
@@ -177,17 +170,22 @@ bool CopyImage()
 
     // Copy to CUDA buffer to allow GPU to have access to the memory
     if (!errFlag)
-        errFlag = CheckErrors(cudaMalloc(reinterpret_cast<void**>(&img_buffer), img_buffer_size));
+        errFlag = CheckErrors(cudaMalloc(reinterpret_cast<void**>(&cuda_img_buffer), cuda_img_buffer_size));
 
     if (!errFlag)
-        errFlag = CheckErrors(cudaMemcpy(img_buffer, pixels, img_buffer_size, cudaMemcpyHostToDevice));
+        errFlag = CheckErrors(cudaMemcpy(cuda_img_buffer, gl_tex_image, cuda_img_buffer_size, cudaMemcpyHostToDevice));
 
-    // Fill nvjpegImage
-    for (int i = 0; i < NVJPEG_MAX_COMPONENT; i++)
+    // Fill nvjpegImage using planar RGB
+    // 
+    /*for (int i = 0; i < NVJPEG_MAX_COMPONENT; i++)
     {
-        nv_image.channel[i] = img_buffer + g_TextureWidth * g_TextureHeight * i;
-        nv_image.pitch[i] = 256;
-    }
+        nv_image.channel[i] = cuda_img_buffer + g_TextureWidth * g_TextureHeight * i;
+        nv_image.pitch[i] = g_TextureWidth;
+    }*/
+
+    // Fill nvjpegImage using interleaved RGB
+    nv_image.channel[0] = cuda_img_buffer;
+    nv_image.pitch[0] = 3 * g_TextureWidth;
 
     return errFlag;
 }
@@ -203,16 +201,18 @@ bool EncodeImage()
 
     // Compress image
     if (!errFlag)
-        errFlag = CheckErrors(nvjpegEncodeImage(nv_handle, nv_enc_state, nv_enc_params, &nv_image, NVJPEG_INPUT_RGB, g_TextureWidth, g_TextureHeight, nullptr));
+        errFlag = CheckErrors(nvjpegEncodeImage(nv_handle, nv_enc_state, nv_enc_params, &nv_image, NVJPEG_INPUT_RGBI, g_TextureWidth, g_TextureHeight, nullptr));
 
     // Get compressed stream size
     if (!errFlag)
-        errFlag = CheckErrors(nvjpegEncodeRetrieveBitstream(nv_handle, nv_enc_state, NULL, &length, nullptr));
-        jpeg.resize(length);
+    {
+        errFlag = CheckErrors(nvjpegEncodeRetrieveBitstream(nv_handle, nv_enc_state, NULL, &nv_stream_size, nullptr));
+        jpeg_data.resize(nv_stream_size);
+    }
 
     // Get stream itself
     if (!errFlag)
-        errFlag = CheckErrors(nvjpegEncodeRetrieveBitstream(nv_handle, nv_enc_state, jpeg.data(), &length, 0));
+        errFlag = CheckErrors(nvjpegEncodeRetrieveBitstream(nv_handle, nv_enc_state, jpeg_data.data(), &nv_stream_size, 0));
 
     return errFlag;
 }
@@ -223,13 +223,12 @@ bool WriteImage()
     // Initialise error flag
     bool errFlag = false;
 
-    const char* jpegstream = reinterpret_cast<const char*>(jpeg.data());
-    std::string output_filename = "F:/Test1.jpg";
-    std::ofstream outputFile(output_filename.c_str(), std::ios::out | std::ios::binary);
+    const char* jpeg_stream = reinterpret_cast<const char*>(jpeg_data.data());
+    std::ofstream outputFile(dataPath.c_str(), std::ios::out | std::ios::binary);
 
     if (outputFile)
     {
-        outputFile.write(jpegstream, length);
+        outputFile.write(jpeg_stream, nv_stream_size);
 
         if (outputFile.bad())
         {
@@ -273,10 +272,42 @@ bool CleanUp()
 // Plugin function to handle a specific rendering event
 static void UNITY_INTERFACE_API OnRenderEvent(int eventID)
 {
-    CopyImage();
-    EncodeImage();
-    WriteImage();
+    // Initialise error flag
+    bool errFlag = false;
+
+    // COPY
+    auto startTime = std::chrono::high_resolution_clock::now();
+    if (!errFlag)
+        CopyImage();
+    auto endTime = std::chrono::high_resolution_clock::now();
+    std::chrono::duration<float, std::milli> duration = endTime - startTime;
+    nativeTimes[0] = duration.count();
+
+    // ENCODE
+    startTime = std::chrono::high_resolution_clock::now();
+    if (!errFlag)
+        EncodeImage();
+    endTime = std::chrono::high_resolution_clock::now();
+    duration = endTime - startTime;
+    nativeTimes[1] = duration.count();
+    
+    // WRITE
+    startTime = std::chrono::high_resolution_clock::now();
+    if (!errFlag)
+        WriteImage();
+    endTime = std::chrono::high_resolution_clock::now();
+    duration = endTime - startTime;
+    nativeTimes[2] = duration.count();
+
+    // SEND METRICS
+    std::string nativeTimesStr = std::to_string(nativeTimes[0]) + "," + std::to_string(nativeTimes[1]) + "," + std::to_string(nativeTimes[2]);
+    SendNativeTimes(nativeTimesStr.c_str());
+
+    // CLEAN UP
     CleanUp();
+
+    if (errFlag)
+        Debug("Error occured during execution");
 }
 
 // Overloaded function to print any nvJPEG errors
@@ -350,6 +381,7 @@ bool CheckErrors(cudaError_t err)
     else
     {
         Debug(cudaGetErrorString(err));
+        errFlag = true;
     }
 
     return errFlag;

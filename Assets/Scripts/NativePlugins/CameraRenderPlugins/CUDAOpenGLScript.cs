@@ -1,4 +1,5 @@
 using System;
+using System.Text;
 using System.Collections;
 using System.Collections.Generic;
 using System.Runtime.InteropServices;
@@ -6,28 +7,33 @@ using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEngine.Rendering;
 
-
-public class DirectX11Script : MonoBehaviour
+public class CUDAOpenGLScript : MonoBehaviour
 {
     // Import DLL Functions
     // Access C++ function from C# script
     [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
     public delegate void DebugDelegate(string str);
 
-    [DllImport("DirectX11")]
+    [DllImport("CUDA_OpenGL_Interop")]
     public static extern void SetDebugFunction(IntPtr fp);
 
-    [DllImport("DirectX11")]
-    private static extern void SetTextureFromUnity(System.IntPtr texture, int imageWidth, int imageHeight, float cameraQuality, string path);
+    [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
+    public delegate void NativeTimesDelegate(string str);
 
-    [DllImport("DirectX11", CallingConvention = CallingConvention.Cdecl)]
-    private static extern void FillNativeTimes(IntPtr data, int count);
+    [DllImport("CUDA_OpenGL_Interop")]
+    public static extern void SetNativeTimes(IntPtr fp);
+
+    [DllImport("CUDA_OpenGL_Interop")]
+    private static extern void SetTextureFromUnity(System.IntPtr texture, int imageWidth, int imageHeight, int cameraQuality, string path);
+
+    [DllImport("CUDA_OpenGL_Interop")]
+    private static extern IntPtr GetRenderEventFunc();
 
     // Global variables
     private Coroutine imageCoroutine;
     Texture2D imageTexture;
     float[] times = new float[4];
-    float[] nativeTimes = new float[3];
+    static string nativeTimesStr = "";
     string buildMode;
 
 
@@ -50,12 +56,19 @@ public class DirectX11Script : MonoBehaviour
             buildMode = "Windowed";
         }
 
-        // Link callback_delegate to DebugCallback function
-        DebugDelegate callback_delegate = new DebugDelegate(DebugCallBack);
-        // Convert callback_delegate into a function pointer that can be used in unmanaged code
-        IntPtr intptr_delegate = Marshal.GetFunctionPointerForDelegate(callback_delegate);
+        // Link debug_callback_delegate to DebugCallback function
+        DebugDelegate debug_callback_delegate = new DebugDelegate(DebugCallBack);
+        // Convert debug_callback_delegate into a function pointer that can be used in unmanaged code
+        IntPtr debug_intptr_delegate = Marshal.GetFunctionPointerForDelegate(debug_callback_delegate);
         // Call the API passing along the function pointer
-        SetDebugFunction(intptr_delegate);
+        SetDebugFunction(debug_intptr_delegate);
+
+        // Link native_times_callback_delegate to DebugCallback function
+        DebugDelegate native_times_callback_delegate = new DebugDelegate(NativeTimesCallBack);
+        // Convert native_times_callback_delegate into a function pointer that can be used in unmanaged code
+        IntPtr native_times_intptr_delegate = Marshal.GetFunctionPointerForDelegate(native_times_callback_delegate);
+        // Call the API passing along the function pointer
+        SetNativeTimes(native_times_intptr_delegate);
         
         // Initialize the image texture as 144p
         imageTexture = new Texture2D(256, 144, TextureFormat.ARGB32, false);
@@ -116,11 +129,12 @@ public class DirectX11Script : MonoBehaviour
 		
         // ENCODE/COMPRESS and WRITE/SAVE
         // Encode the texture in JPG format and Write it to a file
-        // Pass texture pointer to the plugin
-		SetTextureFromUnity(imageTexture.GetNativeTexturePtr(), imageWidth, imageHeight, (float)cameraQuality/100f, path);
+        // Pass texture pointer to the plugin and call native plugin from the render thread
+		SetTextureFromUnity(imageTexture.GetNativeTexturePtr(), imageWidth, imageHeight, cameraQuality, path);
+        GL.IssuePluginEvent(GetRenderEventFunc(), 1);
 
         // Acquire times from DirectX 11 Plugin
-        FillTimes(nativeTimes, nativeTimes.Length);
+        FillTimes();
     }
 
     // Function to return the filepath with an appropriate image name
@@ -130,40 +144,53 @@ public class DirectX11Script : MonoBehaviour
         if (buildMode == "Editor")
         {
             // Return filepath with appropriate image name for editor mode
-            return string.Format("{0}/../Images/Native Plugins/DirectX 11/{1} Mode/{2} Scene/d3d11_{3}p_{4}_{5}.jpg", Application.dataPath, buildMode, SceneManager.GetActiveScene().name, imageHeight, cameraQuality, frameCount+1);
+            return string.Format("{0}/../Images/Native Plugins/CUDA OpenGL Interop/{1} Mode/{2} Scene/d3d11_{3}p_{4}_{5}.jpg", Application.dataPath, buildMode, SceneManager.GetActiveScene().name, imageHeight, cameraQuality, frameCount+1);
         }   
         else
         {
             // Return filepath with appropriate image name for windowed and batch mode
-            return string.Format("{0}/../../../Images/Native Plugins/DirectX 11/{1} Mode/{2} Scene/d3d11_{3}p_{4}_{5}.jpg", Application.dataPath, buildMode, SceneManager.GetActiveScene().name, imageHeight, cameraQuality, frameCount+1);
+            return string.Format("{0}/../../../Images/Native Plugins/CUDA OpenGL Interop/{1} Mode/{2} Scene/d3d11_{3}p_{4}_{5}.jpg", Application.dataPath, buildMode, SceneManager.GetActiveScene().name, imageHeight, cameraQuality, frameCount+1);
         }
     }
 
+    // Fill times metrics with native times values from CUDA OpenGL Interop Plugin
+    public void FillTimes()
+	{
+        string[] nativeTimes = GetNativeTimes().Split(',');
 
-    /**** STATIC AND UNSAFE DEFINED FUNCTIONS ****/
-
-    // Fill times metrics with native times values from DirectX 11 Plugin
-    public unsafe void FillTimes(float[] outArray, int count)
-    {
-        // Pin Memory
-        fixed (float* p = outArray)
-        {
-            FillNativeTimes((IntPtr)p, count);
-        }
-
-        // Fill Copy Time from DirectX 11 Plugin
-        times[1] += nativeTimes[0];
+        // Fill Copy Time from CUDA OpenGL Interop Plugin
+        times[1] += float.Parse(nativeTimes[0]);
         
-        // Fill Encode Time from DirectX 11 Plugin
-        times[2] = nativeTimes[1];
+        // Fill Encode Time from CUDA OpenGL Interop Plugin
+        times[2] = float.Parse(nativeTimes[1]);
 
-        // Fill Write Time from DirectX 11 Plugin
-        times[3] = nativeTimes[2];
-    }
+        // Fill Write Time from CUDA OpenGL Interop Plugin
+        times[3] = float.Parse(nativeTimes[2]);
 
-    // Function to log debug messages from DirectX 11 Plugin
+        Debug.Log(times[1]);
+        Debug.Log(times[2]);
+        Debug.Log(times[3]);
+	}
+
+
+    /**** STATIC DEFINED FUNCTIONS ****/
+
+    // Function to log debug messages from CUDA OpenGL Interop Plugin
     static void DebugCallBack(string str) 
     { 
         Debug.Log(str);
+    }
+
+    // Function to log time metrics from CUDA OpenGL Interop Plugin
+    static void NativeTimesCallBack(string str) 
+    { 
+        nativeTimesStr = str;
+        Debug.Log(str);
+    }
+
+    // Function to return native times metrics
+    static string GetNativeTimes()
+    {
+        return nativeTimesStr;
     }
 }
