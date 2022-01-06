@@ -16,6 +16,10 @@
 #include <string>
 #include <sstream>
 #include <cassert>
+#include <fstream>
+#include <iostream>
+#include <math.h>
+#include <vector>
 #include <functional>
 
 #endif //PCH_H

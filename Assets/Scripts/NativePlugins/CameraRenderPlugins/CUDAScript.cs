@@ -9,6 +9,10 @@ using UnityEngine.Rendering;
 
 public class CUDAScript : MonoBehaviour
 {
+    // Editor Options
+    [Header("Camera Settings")]
+    [SerializeField] Camera cameraObject;
+
     // Import DLL Functions
     // Access C++ function from C# script
     [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
@@ -49,19 +53,25 @@ public class CUDAScript : MonoBehaviour
 
     private void CreateTextureAndPassToPlugin()
 	{
+        cameraObject.targetTexture = new RenderTexture(256, 256, 24, RenderTextureFormat.ARGB32);
+        cameraObject.Render();
+
+
 		// Create a texture
-		Texture2D tex = new Texture2D(256,256,TextureFormat.ARGB32,false);
+		Texture2D tex = new Texture2D(256,256,TextureFormat.RGB24,false);
 		// Set point filtering just so we can see the pixels clearly
 		tex.filterMode = FilterMode.Point;
 		// Call Apply() so it's actually uploaded to the GPU
-		tex.Apply();
+	    tex.Apply();
+
+        //Graphics.CopyTexture(cameraObject.activeTexture, tex);
 
 		// Set texture onto our material
 		// GetComponent<Renderer>().material.mainTexture = tex;
 
 		// Pass texture pointer to the plugin
 		error = SetTextureFromUnity(tex.GetNativeTexturePtr(), tex.width, tex.height);
-        //GL.IssuePluginEvent(GetRenderEventFunc(), 1);
+        GL.IssuePluginEvent(GetRenderEventFunc(), 1);
 
         // GetErrorString(error);
         // Debug.Log("CUDA Error: " + error + " (" + desc.ToString() + ")");
@@ -77,7 +87,7 @@ public class CUDAScript : MonoBehaviour
 			// The plugin can distinguish between different
 			// things it needs to do based on this ID.
 			// For our simple plugin, it does not matter which ID we pass here.
-			GL.IssuePluginEvent(GetRenderEventFunc(), 1);
+			//GL.IssuePluginEvent(GetRenderEventFunc(), 1);
 		}
 	}
 
