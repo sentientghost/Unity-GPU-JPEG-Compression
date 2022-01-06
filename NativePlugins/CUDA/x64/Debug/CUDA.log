@@ -1,7 +1,0 @@
-﻿  CUDAPlugin.cpp
-  Note: including lib: glut32.lib
-F:\Github\Repositories\Unity-On-GPU-JPEG-Compression\NativePlugins\CUDA\CUDAPlugin.cpp(113,44): warning C4311: 'type cast': pointer truncation from 'void *' to 'GLuint'
-F:\Github\Repositories\Unity-On-GPU-JPEG-Compression\NativePlugins\CUDA\CUDAPlugin.cpp(113,44): warning C4302: 'type cast': truncation from 'void *' to 'GLuint'
-F:\Github\Repositories\Unity-On-GPU-JPEG-Compression\NativePlugins\CUDA\CUDAPlugin.cpp(343,25): warning C4101: 'input_format': unreferenced local variable
-F:\Github\Repositories\Unity-On-GPU-JPEG-Compression\NativePlugins\CUDA\CUDAPlugin.cpp(342,26): warning C4101: 'output_format': unreferenced local variable
-  CUDA.vcxproj -> F:\Github\Repositories\Unity-On-GPU-JPEG-Compression\NativePlugins\x64\Debug\CUDA.dll

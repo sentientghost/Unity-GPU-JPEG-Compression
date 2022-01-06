@@ -18,17 +18,16 @@ public class CUDAScript : MonoBehaviour
     [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
     public delegate void DebugDelegate(string str);
 
-    [DllImport("CUDA")]
+    [DllImport("CUDA_OpenGL_Interop")]
     public static extern void SetDebugFunction(IntPtr fp);
 
-    [DllImport("CUDA")]
-    private static extern int SetTextureFromUnity(System.IntPtr texture, int imageWidth, int imageHeight);
+    [DllImport("CUDA_OpenGL_Interop")]
+    private static extern void SetTextureFromUnity(System.IntPtr texture, int imageWidth, int imageHeight);
     
-    [DllImport("CUDA")]
+    [DllImport("CUDA_OpenGL_Interop")]
     private static extern IntPtr GetRenderEventFunc();
 
-    [DllImport("CUDA")]
-    private static extern void GetErrorString(int error);
+
 
     // Global variables
     private Coroutine imageCoroutine;
@@ -70,11 +69,9 @@ public class CUDAScript : MonoBehaviour
 		// GetComponent<Renderer>().material.mainTexture = tex;
 
 		// Pass texture pointer to the plugin
-		error = SetTextureFromUnity(tex.GetNativeTexturePtr(), tex.width, tex.height);
+		SetTextureFromUnity(tex.GetNativeTexturePtr(), tex.width, tex.height);
         GL.IssuePluginEvent(GetRenderEventFunc(), 1);
 
-        // GetErrorString(error);
-        // Debug.Log("CUDA Error: " + error + " (" + desc.ToString() + ")");
 	}
 
     private IEnumerator CallPluginAtEndOfFrames()
@@ -96,4 +93,5 @@ public class CUDAScript : MonoBehaviour
     { 
             Debug.Log(str);
     }
+
 }

@@ -178,6 +178,7 @@ extern "C" void UNITY_INTERFACE_EXPORT UNITY_INTERFACE_API SetTextureFromUnity(I
     }
 }
 
+
 // --------------------------------------------------------------------------
 // DIRECTX TOOLKIT ADAPTED FUNCTIONS
 
@@ -582,6 +583,7 @@ HRESULT SaveWICTextureToFile(const wchar_t* filePath)
 
     return S_OK;
 }
+
 
 // --------------------------------------------------------------------------
 // PLUG-IN SPECIFIC DEFINED FUNCTIONS
