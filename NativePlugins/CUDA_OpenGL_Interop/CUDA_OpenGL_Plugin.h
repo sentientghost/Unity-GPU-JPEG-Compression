@@ -34,13 +34,6 @@ extern "C" UnityRenderingEvent UNITY_INTERFACE_EXPORT UNITY_INTERFACE_API GetRen
 // --------------------------------------------------------------------------
 // CUDA FUNCTIONS
 
-bool CopyImage();
-
-bool EncodeImage();
-
-bool WriteImage();
-
-bool CleanUp();
 
 // --------------------------------------------------------------------------
 // PLUG-IN SPECIFIC DEFINED FUNCTIONS

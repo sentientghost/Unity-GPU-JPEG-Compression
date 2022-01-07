@@ -32,8 +32,8 @@ public class CUDAOpenGLScript : MonoBehaviour
     // Global variables
     private Coroutine imageCoroutine;
     Texture2D imageTexture;
-    float[] times = new float[4];
-    static string nativeTimesStr = "";
+    float[] times = new float[4] {1,2,3,4};
+    static string nativeTimesStr = "1,2,3";
     string buildMode;
 
 
@@ -133,7 +133,9 @@ public class CUDAOpenGLScript : MonoBehaviour
 		SetTextureFromUnity(imageTexture.GetNativeTexturePtr(), imageWidth, imageHeight, cameraQuality, path);
         GL.IssuePluginEvent(GetRenderEventFunc(), 1);
 
-        // Acquire times from DirectX 11 Plugin
+        // Acquire times from CUDA OpenGL Interop Plugin
+        // Wait 1 Second for Data to be transferred
+        yield return new WaitForSeconds(1);
         FillTimes();
     }
 
@@ -144,12 +146,12 @@ public class CUDAOpenGLScript : MonoBehaviour
         if (buildMode == "Editor")
         {
             // Return filepath with appropriate image name for editor mode
-            return string.Format("{0}/../Images/Native Plugins/CUDA OpenGL Interop/{1} Mode/{2} Scene/d3d11_{3}p_{4}_{5}.jpg", Application.dataPath, buildMode, SceneManager.GetActiveScene().name, imageHeight, cameraQuality, frameCount+1);
+            return string.Format("{0}/../Images/Native Plugins/CUDA OpenGL Interop/{1} Mode/{2} Scene/cudaGL_{3}p_{4}_{5}.jpg", Application.dataPath, buildMode, SceneManager.GetActiveScene().name, imageHeight, cameraQuality, frameCount+1);
         }   
         else
         {
             // Return filepath with appropriate image name for windowed and batch mode
-            return string.Format("{0}/../../../Images/Native Plugins/CUDA OpenGL Interop/{1} Mode/{2} Scene/d3d11_{3}p_{4}_{5}.jpg", Application.dataPath, buildMode, SceneManager.GetActiveScene().name, imageHeight, cameraQuality, frameCount+1);
+            return string.Format("{0}/../../../Images/Native Plugins/CUDA OpenGL Interop/{1} Mode/{2} Scene/cudaGL_{3}p_{4}_{5}.jpg", Application.dataPath, buildMode, SceneManager.GetActiveScene().name, imageHeight, cameraQuality, frameCount+1);
         }
     }
 
@@ -166,10 +168,6 @@ public class CUDAOpenGLScript : MonoBehaviour
 
         // Fill Write Time from CUDA OpenGL Interop Plugin
         times[3] = float.Parse(nativeTimes[2]);
-
-        Debug.Log(times[1]);
-        Debug.Log(times[2]);
-        Debug.Log(times[3]);
 	}
 
 
@@ -185,7 +183,6 @@ public class CUDAOpenGLScript : MonoBehaviour
     static void NativeTimesCallBack(string str) 
     { 
         nativeTimesStr = str;
-        Debug.Log(str);
     }
 
     // Function to return native times metrics
