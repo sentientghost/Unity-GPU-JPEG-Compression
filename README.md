@@ -18,21 +18,15 @@ improvement
 # Repo Structure
 ```
 GitHub Landing Page: Explains repository structure and contains a single Unity project for all possible solutions
-├── Assets: Contains all resources required for Unity
+├── Assets: Contains images for banners and logos
 │   ├── Lighting: Contains the lighting maps for the scenes
 │   ├── Materials: Contains different materials for the objects in the scenes
-│   ├── Plugins: Contains compiled DLLs from the Native Plugins
 │   ├── Prefabs: Contains prefab objects to spawn into the scenes
 │   ├── Scenes: Contains the scenes used to test the pipeline
 │   └── Scripts: Contains C# scripts used in the project
 │       ├── CameraScript: Main script that acts as a camera controller
 │       ├── LinearScript: Take image using a linear coding approach
 │       └── CoroutinesScript: Take image using a coroutines coding approach 
-|
-├── NativePlugins: Visual Studio project containing all resources required for C++ Plugins
-│   ├── DirectX11: Source code for the DirectX 11 Plugin
-│   ├── DirectXTK: Package containing helper classes for writing DirectX 11 C++ code 
-│   └── x64/Debug: Contains compiled DLLs from Visual Studio
 |
 ├── Packages: Contains packages installed from the Unity Package Manager
 |
