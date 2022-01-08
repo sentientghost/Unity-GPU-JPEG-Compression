@@ -17,23 +17,26 @@ public class CUDAOpenGLScript : MonoBehaviour
     [DllImport("CUDA_OpenGL_Interop")]
     public static extern void SetDebugFunction(IntPtr fp);
 
-    [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
-    public delegate void NativeTimesDelegate(string str);
-
-    [DllImport("CUDA_OpenGL_Interop")]
-    public static extern void SetNativeTimes(IntPtr fp);
-
     [DllImport("CUDA_OpenGL_Interop")]
     private static extern void SetTextureFromUnity(System.IntPtr texture, int imageWidth, int imageHeight, int cameraQuality, string path);
 
     [DllImport("CUDA_OpenGL_Interop")]
     private static extern IntPtr GetRenderEventFunc();
 
+    [DllImport("CUDA_OpenGL_Interop")]
+    private static extern int GetCopyTime();
+
+    [DllImport("CUDA_OpenGL_Interop")]
+    private static extern int GetEncodeTime();
+
+    [DllImport("CUDA_OpenGL_Interop")]
+    private static extern int GetWriteTime();
+
+
     // Global variables
     private Coroutine imageCoroutine;
     Texture2D imageTexture;
-    float[] times = new float[4] {1,2,3,4};
-    static string nativeTimesStr = "1,2,3";
+    float[] times = new float[4] {0,0,0,0};
     string buildMode;
 
 
@@ -63,13 +66,6 @@ public class CUDAOpenGLScript : MonoBehaviour
         // Call the API passing along the function pointer
         SetDebugFunction(debug_intptr_delegate);
 
-        // Link native_times_callback_delegate to DebugCallback function
-        DebugDelegate native_times_callback_delegate = new DebugDelegate(NativeTimesCallBack);
-        // Convert native_times_callback_delegate into a function pointer that can be used in unmanaged code
-        IntPtr native_times_intptr_delegate = Marshal.GetFunctionPointerForDelegate(native_times_callback_delegate);
-        // Call the API passing along the function pointer
-        SetNativeTimes(native_times_intptr_delegate);
-        
         // Initialize the image texture as 144p
         imageTexture = new Texture2D(256, 144, TextureFormat.ARGB32, false);
     }
@@ -130,12 +126,11 @@ public class CUDAOpenGLScript : MonoBehaviour
         // ENCODE/COMPRESS and WRITE/SAVE
         // Encode the texture in JPG format and Write it to a file
         // Pass texture pointer to the plugin and call native plugin from the render thread
+        // Issue the plugin event to copy, encode and write the image
 		SetTextureFromUnity(imageTexture.GetNativeTexturePtr(), imageWidth, imageHeight, cameraQuality, path);
         GL.IssuePluginEvent(GetRenderEventFunc(), 1);
-
+        
         // Acquire times from CUDA OpenGL Interop Plugin
-        // Wait 1 Second for Data to be transferred
-        yield return new WaitForSeconds(1);
         FillTimes();
     }
 
@@ -158,16 +153,14 @@ public class CUDAOpenGLScript : MonoBehaviour
     // Fill times metrics with native times values from CUDA OpenGL Interop Plugin
     public void FillTimes()
 	{
-        string[] nativeTimes = GetNativeTimes().Split(',');
-
         // Fill Copy Time from CUDA OpenGL Interop Plugin
-        times[1] += float.Parse(nativeTimes[0]);
-        
+        times[1] += GetCopyTime()/10000f;
+
         // Fill Encode Time from CUDA OpenGL Interop Plugin
-        times[2] = float.Parse(nativeTimes[1]);
+        times[2] = GetEncodeTime()/10000f;
 
         // Fill Write Time from CUDA OpenGL Interop Plugin
-        times[3] = float.Parse(nativeTimes[2]);
+        times[3] = GetWriteTime()/10000f;
 	}
 
 
@@ -177,17 +170,5 @@ public class CUDAOpenGLScript : MonoBehaviour
     static void DebugCallBack(string str) 
     { 
         Debug.Log(str);
-    }
-
-    // Function to log time metrics from CUDA OpenGL Interop Plugin
-    static void NativeTimesCallBack(string str) 
-    { 
-        nativeTimesStr = str;
-    }
-
-    // Function to return native times metrics
-    static string GetNativeTimes()
-    {
-        return nativeTimesStr;
     }
 }

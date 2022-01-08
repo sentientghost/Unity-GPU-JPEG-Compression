@@ -176,7 +176,7 @@ public class CUDAOpenGLCameraScript : MonoBehaviour
                         imageCount += 1;
 
                         // Update progress and output logs
-                        float progress = 100 * ((imageCount*250 + frameCount) / 21000f);
+                        float progress = 100 * ((imageCount*250 + frameCount) / 10500f);
                         Debug.Log("Progress: " + progress.ToString("F2") + " %");
                         Debug.Log("Current Count Value: " + apiCount + " " + resolutionCount + " " + qualityCount);
 
@@ -187,6 +187,11 @@ public class CUDAOpenGLCameraScript : MonoBehaviour
                     {
                         // Retake image if it was previously unsuccessful
                         frameCount -= 1;
+
+                        // Ensure frameCount stays within index range for the arrays
+                        if (frameCount < 0)
+                            frameCount = 0;
+
                         checkFlag = SaveScreenJPG();
                         frameCount += 1;
                     }
@@ -280,7 +285,7 @@ public class CUDAOpenGLCameraScript : MonoBehaviour
         }
 
         // Check if the scipts ran successfully based on the image times 
-        if (imageTimes[0] == 0 && imageTimes[1] == 0 && imageTimes[2] == 0 && imageTimes[3] == 0)
+        if (imageTimes[0] == 0 || imageTimes[1] == 0 || imageTimes[2] == 0 || imageTimes[3] == 0)
         {
             // Take image failed so return false
             return false;

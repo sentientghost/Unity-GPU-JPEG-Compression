@@ -190,6 +190,11 @@ public class CameraScript : MonoBehaviour
                     {
                         // Retake image if it was previously unsuccessful
                         frameCount -= 1;
+
+                        // Ensure frameCount stays within index range for the arrays
+                        if (frameCount < 0)
+                            frameCount = 0;
+                            
                         checkFlag = SaveScreenJPG();
                         frameCount += 1;
                     }
@@ -287,7 +292,7 @@ public class CameraScript : MonoBehaviour
         }
 
         // Check if the scipts ran successfully based on the image times 
-        if (imageTimes[0] == 0 && imageTimes[1] == 0 && imageTimes[2] == 0 && imageTimes[3] == 0)
+        if (imageTimes[0] == 0 || imageTimes[1] == 0 || imageTimes[2] == 0 || imageTimes[3] == 0)
         {
             // Take image failed so return false
             return false;

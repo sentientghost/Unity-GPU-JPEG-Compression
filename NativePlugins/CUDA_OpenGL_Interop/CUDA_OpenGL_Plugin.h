@@ -27,6 +27,12 @@ static void UNITY_INTERFACE_API OnGraphicsDeviceEvent(UnityGfxDeviceEventType ev
 // --------------------------------------------------------------------------
 // EXPORTED FUNCTIONS TO C# SCRIPT 
 
+extern "C" int UNITY_INTERFACE_EXPORT UNITY_INTERFACE_API GetCopyTime();
+
+extern "C" int UNITY_INTERFACE_EXPORT UNITY_INTERFACE_API GetEncodeTime();
+
+extern "C" int UNITY_INTERFACE_EXPORT UNITY_INTERFACE_API GetWriteTime();
+
 extern "C" void UNITY_INTERFACE_EXPORT UNITY_INTERFACE_API SetTextureFromUnity(void* textureHandle, int imageWidth, int imageHeight, int cameraQuality, char* path);
 
 extern "C" UnityRenderingEvent UNITY_INTERFACE_EXPORT UNITY_INTERFACE_API GetRenderEventFunc();
@@ -34,6 +40,13 @@ extern "C" UnityRenderingEvent UNITY_INTERFACE_EXPORT UNITY_INTERFACE_API GetRen
 // --------------------------------------------------------------------------
 // CUDA FUNCTIONS
 
+bool CopyImage();
+
+bool EncodeImage();
+
+bool WriteImage();
+
+bool CleanUp();
 
 // --------------------------------------------------------------------------
 // PLUG-IN SPECIFIC DEFINED FUNCTIONS
