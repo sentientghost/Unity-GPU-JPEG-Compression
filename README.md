@@ -22,14 +22,30 @@ GitHub Landing Page: Explains repository structure and contains a single Unity p
 │   ├── Lighting: Contains the lighting maps for the scenes
 │   ├── Materials: Contains different materials for the objects in the scenes
 │   ├── Plugins: Contains compiled DLLs from the Native Plugins
+│   |   ├── CUDA_OpenGL_Interop: library to be imported for use with CUDA OpenGL Interop
+│   |   └── DirectX11: library to be imported for use with DirectX 11
 │   ├── Prefabs: Contains prefab objects to spawn into the scenes
+│   |   ├── DynamicSceneBall: prefab ball for Dynamic Scene to destroy and instantiate 
+│   |   ├── PhysicsSceneBall: prefab ball for Physics Scene to destroy and instantiate
+│   |   └── VisualsSceneBall: prefab ball for Visuals Scene to destroy and instantiate
 │   ├── Scenes: Contains the scenes used to test the pipeline
+│   |   ├── Static: single ball with no physics simulation 
+│   |   ├── Dynamic: single ball with physics simulation 
+│   |   ├── Physics: multiple balls with physics simulation 
+│   |   └── Visuals: single ball with physics simulation and post-processing effects 
 │   └── Scripts: Contains C# scripts used in the project
-│       ├── CameraScript: Main script that acts as a camera controller
-│       ├── LinearScript: Take image using a linear coding approach
-│       └── CoroutinesScript: Take image using a coroutines coding approach 
+│       ├── CurrentPerformance: contains C# script related to current methods in Unity
+│       |   ├── CameraScript: main script that acts as a camera controller
+│       |   ├── LinearScript: take image using a linear coding approach
+│       |   └── CoroutinesScript: take image using a coroutines coding approach 
+│       └── NativePlugins: contains C# script related to alternative methods in Unity
+│           ├── DirectX11CameraScript: main camera controller script for DirectX 11
+│           ├── DirectX11Script: take image using imported DirectX 11 DLL
+│           ├── CUDAOpenGLCameraScript: main camera controller script for CUDA OpenGL Interop
+│           └── CUDAOpenGLScript: take image using imported CUDA OpenGL Interop DLL
 |
 ├── NativePlugins: Visual Studio project containing all resources required for C++ Plugins
+│   ├── CUDA_OpenGL_Interop: Source code for the CUDA Interoperability with OpenGL Plugin
 │   ├── DirectX11: Source code for the DirectX 11 Plugin
 │   ├── DirectXTK: Package containing helper classes for writing DirectX 11 C++ code 
 │   └── x64/Debug: Contains compiled DLLs from Visual Studio
@@ -46,7 +62,7 @@ GitHub Landing Page: Explains repository structure and contains a single Unity p
 Below is a list of hardware and software you will need to get started:
 
 - Hardware
-    - NVIDIA Graphics Card
+    - CUDA-enabled NVIDIA Graphics Card
     - At least 8GB Ram
 - Software
     - Windows 10 (note that other Windows versions have NOT been tested)
