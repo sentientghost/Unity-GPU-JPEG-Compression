@@ -135,7 +135,7 @@ public class DirectX11Script : MonoBehaviour
         else
         {
             // Return filepath with appropriate image name for windowed and batch mode
-            return string.Format("{0}/../../../Images/Native Plugins/DirectX 11/{1} Mode/{2} Scene/d3d11_{3}p_{4}_{5}.jpg", Application.dataPath, buildMode, SceneManager.GetActiveScene().name, imageHeight, cameraQuality, frameCount+1);
+            return string.Format("{0}/../../../../Images/Native Plugins/DirectX 11/{1} Mode/{2} Scene/d3d11_{3}p_{4}_{5}.jpg", Application.dataPath, buildMode, SceneManager.GetActiveScene().name, imageHeight, cameraQuality, frameCount+1);
         }
     }
 
