@@ -1,6 +1,6 @@
 ![project_banner](RepoImages/ProjectBanner.png)
 
-# Unity-On-GPU-JPEG-Compression
+# Unity-GPU-JPEG-Compression
 
 Develop a method for compressing GPU textures using the JPEG specification, in Unity, and then evaluate its performance.
 
