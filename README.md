@@ -8,11 +8,11 @@ Develop a method for compressing GPU textures using the JPEG specification, in U
 
 1. Understand how JPEG compression works to reduce the size of raw image data
 2. Understand the Unity Rendering pipeline
-3. Investigate different methods currently used for on-GPU JPEG compression
+3. Investigate different methods currently used for GPU based JPEG compression
 4. Investigate the current performance of image generation and saving in Unity.
 5. Select a suitable approach and implement a prototype.
 6. Measure performance (both Unity performance and render quality) of the system after your custom
-on-GPU compressor is used and note any improvements. Determine if there is a performance
+GPU compression tool is used and note any improvements. Determine if there is a performance
 improvement
 
 # Repo Structure
