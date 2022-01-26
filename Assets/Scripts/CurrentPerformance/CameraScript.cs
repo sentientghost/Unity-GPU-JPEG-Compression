@@ -373,7 +373,7 @@ public class CameraScript : MonoBehaviour
         else
         {
             // Return filepath for windowed and batch mode
-            return string.Format("{0}/../../../Metrics/Current Performance/{1}-Mode_{2}-Scene.csv", Application.dataPath, buildMode, SceneManager.GetActiveScene().name);
+            return string.Format("{0}/../../../../Metrics/Current Performance/{1}-Mode_{2}-Scene.csv", Application.dataPath, buildMode, SceneManager.GetActiveScene().name);
         }    
     }
 

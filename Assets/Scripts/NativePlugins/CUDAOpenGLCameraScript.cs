@@ -366,7 +366,7 @@ public class CUDAOpenGLCameraScript : MonoBehaviour
         else
         {
             // Return filepath for windowed and batch mode OpenGL Core graphics API
-            return string.Format("{0}/../../../Metrics/Native Plugins/CUDA OpenGL Interop/{1}-Mode_{2}-Scene.csv", Application.dataPath, buildMode, SceneManager.GetActiveScene().name);
+            return string.Format("{0}/../../../../Metrics/Native Plugins/CUDA OpenGL Interop/{1}-Mode_{2}-Scene.csv", Application.dataPath, buildMode, SceneManager.GetActiveScene().name);
         } 
     }
 
