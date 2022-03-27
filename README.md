@@ -38,11 +38,12 @@ GitHub Landing Page: Explains repository structure and contains a single Unity p
 │       |   ├── CameraScript: main script that acts as a camera controller
 │       |   ├── LinearScript: take image using a linear coding approach
 │       |   └── CoroutinesScript: take image using a coroutines coding approach 
-│       └── NativePlugins: contains C# script related to alternative methods in Unity
-│           ├── DirectX11CameraScript: main camera controller script for DirectX 11
-│           ├── DirectX11Script: take image using imported DirectX 11 DLL
-│           ├── CUDAOpenGLCameraScript: main camera controller script for CUDA OpenGL Interop
-│           └── CUDAOpenGLScript: take image using imported CUDA OpenGL Interop DLL
+│       ├── NativePlugins: contains C# script related to alternative methods in Unity
+│       |   ├── DirectX11CameraScript: main camera controller script for DirectX 11
+│       |   ├── DirectX11Script: take image using imported DirectX 11 DLL
+│       |   ├── CUDAOpenGLCameraScript: main camera controller script for CUDA OpenGL Interop
+│       |   └── CUDAOpenGLScript: take image using imported CUDA OpenGL Interop DLL
+|       └── DemoScript: main script to show a sample implementation of the four solutions
 |
 ├── NativePlugins: Visual Studio project containing all resources required for C++ Plugins
 │   ├── CUDA_OpenGL_Interop: Source code for the CUDA Interoperability with OpenGL Plugin
