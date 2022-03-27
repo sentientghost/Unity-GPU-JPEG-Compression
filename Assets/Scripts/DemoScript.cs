@@ -69,16 +69,16 @@ public class DemoScript : MonoBehaviour
     // Called when the scene starts but before the start function
     void Awake() 
     {   
+        GraphicsDeviceType[] graphicsAPI = PlayerSettings.GetGraphicsAPIs(BuildTarget.StandaloneWindows64);
+
         // Set correct Graphics API based on Solution
-        if (solution == Solution.DirectX11)
+        if (solution == Solution.DirectX11 && graphicsAPI[0] != GraphicsDeviceType.Direct3D11)
         {
-            var apis = new GraphicsDeviceType[] {GraphicsDeviceType.Direct3D11};
-            PlayerSettings.SetGraphicsAPIs(BuildTarget.StandaloneWindows64, apis);
+            Debug.LogError("Error: Unsupported Graphics API for DirectX 11 Solution. Please change Active Graphics API in Player Settings to Direct3D11.");
         }
-        else if (solution == Solution.CUDAOpenGLInterop)
+        else if (solution == Solution.CUDAOpenGLInterop && graphicsAPI[0] != GraphicsDeviceType.OpenGLCore)
         {
-            var apis = new GraphicsDeviceType[] {GraphicsDeviceType.OpenGLCore};
-            PlayerSettings.SetGraphicsAPIs(BuildTarget.StandaloneWindows64, apis);
+            Debug.LogError("Error: Unsupported Graphics API for CUDA OpenGL Interop Solution. Please change Active Graphics API in Player Settings to OpenGLCore.");
         }
 
         if (outputDirectory == "")
@@ -86,12 +86,6 @@ public class DemoScript : MonoBehaviour
             outputDirectory = Path.Combine(Application.dataPath, "../Images");
 
             Debug.LogWarning("Output Directory not set. Defaulting to: " + outputDirectory);
-        }
-
-        if (verbose)
-        {
-            GraphicsDeviceType[] graphicsAPI = PlayerSettings.GetGraphicsAPIs(BuildTarget.StandaloneWindows64);
-            Debug.Log("Graphics API: " + graphicsAPI[0]);
         }
     }
 

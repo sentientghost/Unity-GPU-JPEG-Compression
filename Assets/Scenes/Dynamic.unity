@@ -1352,7 +1352,7 @@ MonoBehaviour:
   cameraObject: {fileID: 1719888979}
   cameraFrequency: 25
   imageResolution: 720
-  solution: 0
+  solution: 3
   jpegQuality: 75
   verbose: 0
   outputDirectory: F:/Github/Repositories/Unity-GPU-JPEG-Compression/Images/Demo
