@@ -53,7 +53,6 @@ public class DemoScript : MonoBehaviour
     public string outputDirectory = "";
     
     // Configuration Variables
-    string imagePath;
     float intervalTime;
     float timeElapsed;
     int[] imageWH;
@@ -84,7 +83,7 @@ public class DemoScript : MonoBehaviour
 
         if (outputDirectory == "")
         {
-            outputDirectory = Application.dataPath + "/../Images";
+            outputDirectory = Path.Combine(Application.dataPath, "../Images");
 
             Debug.LogWarning("Output Directory not set. Defaulting to: " + outputDirectory);
         }
@@ -104,20 +103,24 @@ public class DemoScript : MonoBehaviour
         {
             case Solution.Linear:
                 linearScript = gameObject.GetComponent<LinearScript> ();
+                linearScript.enabled = true;
                 break;
 
             case Solution.Coroutines:
                 coroutinesScript = gameObject.GetComponent<CoroutinesScript> ();
+                coroutinesScript.enabled = true;
                 break;
 
             case Solution.DirectX11:
                 directX11Script = gameObject.GetComponent<DirectX11Script> ();
+                directX11Script.enabled = true;
                 Vector3 directX11Rotation = new Vector3 (0, 0, 180);
                 cameraObject.transform.eulerAngles = cameraObject.transform.eulerAngles - directX11Rotation;
                 break;
 
             case Solution.CUDAOpenGLInterop:
                 cudaOpenGLScript = gameObject.GetComponent<CUDAOpenGLScript> ();
+                cudaOpenGLScript.enabled = true;
                 Vector3 cudaOpenGLRotation = new Vector3 (0, 0, 180);
                 cameraObject.transform.eulerAngles = cameraObject.transform.eulerAngles - cudaOpenGLRotation;
                 break;
@@ -154,9 +157,7 @@ public class DemoScript : MonoBehaviour
         // Check if the time condition is true which is constraint by the camera frequency
         if (Time.fixedTime >= intervalTime)
         {   
-            string dateTime = System.DateTime.Now.ToString("dd/MM/yyyy-hh:mm:ss");
-            string scene = SceneManager.GetActiveScene().name;
-            imagePath = outputDirectory + "/" + solution + "_" + scene + "_" + dateTime + ".jpg";
+            
             SaveScreenJPG();
         }
     }
@@ -181,6 +182,11 @@ public class DemoScript : MonoBehaviour
         // Initialize image times and success flag for the execution time metrics  
         bool success = true;
         float[] imageTimes = new float[4];
+
+        // Initialize image path based on Date Time and Active Scene
+        string dateTime = System.DateTime.Now.ToString("dd_MM_yyyy-hh_mm_ss");
+        string scene = SceneManager.GetActiveScene().name;
+        string imagePath = outputDirectory + "/" + solution + "-" + scene + "-" + dateTime + ".jpg";
         
         // Save JPEG Screenshot using the relevant Solution Script and save the image times
         switch(solution)
