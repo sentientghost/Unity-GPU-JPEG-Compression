@@ -64,7 +64,63 @@ public class DirectX11Script : MonoBehaviour
 
     /**** USER DEFINED FUNCTIONS ****/
 
-    // Function to start the coroutine
+    // Function to start the coroutine (Used for Demo)
+    public float[] CallTakeImage(int imageWidth, int imageHeight, Camera cameraObject, int cameraQuality, string imagePath) 
+    {
+        // Start "Take Image" coroutine
+        imageCoroutine = StartCoroutine(TakeImage(imageWidth, imageHeight, cameraObject, cameraQuality, imagePath));
+
+        // Return the image times
+        return times;
+    }
+
+    // Coroutine function to take image from the screen (Used for Demo)
+    IEnumerator TakeImage(int imageWidth, int imageHeight, Camera cameraObject, int cameraQuality, string imagePath)
+    {
+        // Read the screen buffer after rendering is complete
+        yield return new WaitForEndOfFrame();
+
+        // Create time variables
+        float startTime = 1.0f;
+        float endTime = 1.0f;
+
+        // Create a texture in RGB24 format with the specified width and height
+        // Set point filtering just so we can see the pixels clearly
+        // Call Apply() so it's actually uploaded to the GPU
+        UnityEngine.Object.Destroy(imageTexture);
+        imageTexture = new Texture2D(imageWidth, imageHeight, TextureFormat.ARGB32, false);
+		imageTexture.filterMode = FilterMode.Point;
+		imageTexture.Apply();
+
+        // RENDER
+        // Render the camera's view
+        // The camera will send OnPreCull, OnPreRender and OnPostRender
+        // OnPreCull - Event function that Unity calls before a Camera culls the scene
+        // OnPreRender - Event function that Unity calls before a Camera renders the scene
+        // OnPostRender - Event function that Unity calls after a Camera renders the scene
+        startTime = Time.realtimeSinceStartup;
+        cameraObject.Render();
+        endTime = Time.realtimeSinceStartup;
+        times[0] = ((endTime - startTime) * 1000);
+
+        // READ/COPY
+        // GPU to GPU
+        // Read the active render texture into the image texture 
+        startTime = Time.realtimeSinceStartup;
+        Graphics.CopyTexture(cameraObject.activeTexture, imageTexture);
+        endTime = Time.realtimeSinceStartup;
+        times[1] = ((endTime - startTime) * 1000);
+		
+        // ENCODE/COMPRESS and WRITE/SAVE
+        // Encode the texture in JPG format and Write it to a file
+        // Pass texture pointer to the plugin
+		SetTextureFromUnity(imageTexture.GetNativeTexturePtr(), imageWidth, imageHeight, (float)cameraQuality/100f, imagePath);
+
+        // Acquire times from DirectX 11 Plugin
+        FillTimes(nativeTimes, nativeTimes.Length);
+    }
+
+    // Function to start the coroutine (Used for Testing)
     public float[] CallTakeImage(int imageWidth, int imageHeight, Camera cameraObject, int cameraQuality, int frameCount) 
     {
         // Start "Take Image" coroutine
@@ -74,7 +130,7 @@ public class DirectX11Script : MonoBehaviour
         return times;
     }
 
-    // Coroutine function to take image from the screen
+    // Coroutine function to take image from the screen (Used for Testing)
     IEnumerator TakeImage(int imageWidth, int imageHeight, Camera cameraObject, int cameraQuality, int frameCount)
     {
         // Read the screen buffer after rendering is complete
